@@ -12,4 +12,4 @@ class Wishlist(Base):
     schedule_timestamp = Column(DateTime,nullable=False)
     schedule_frequency = Column(Integer,nullable=False,default=1)
     country_code = Column(String,nullable=False,default="CH")
-    wishlist_games = relationship("WishlistGame",back_populates="wishlist")
+    wishlist_game = relationship("WishlistGame",back_populates="wishlist")

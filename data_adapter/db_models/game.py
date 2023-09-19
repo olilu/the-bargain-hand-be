@@ -8,4 +8,4 @@ class Game(Base):
     shop = Column(String, nullable=False)
     img_link = Column(String, nullable=False, default="https://via.placeholder.com/150")
     link = Column(String, nullable=False, unique=True)
-    wishlist_games = relationship("WishlistGame",back_populates="games")
+    wishlist_game = relationship("WishlistGame",back_populates="game")
