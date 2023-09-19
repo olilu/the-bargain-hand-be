@@ -1,6 +1,18 @@
+# for FastAPI
+fastapi==0.103.1
+uvicorn==0.23.1
+
 # for databases
 SQLAlchemy==2.0.21
 psycopg[binary, pool]
 
 # for env vars
 python-dotenv==1.0.0
+
+# for testing
+pytest
+pytest-cov
+httpx
+
+# email validation
+pydantic[email]
