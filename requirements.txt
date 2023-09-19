@@ -1,0 +1,6 @@
+# for databases
+SQLAlchemy==2.0.21
+psycopg[binary, pool]
+
+# for env vars
+python-dotenv==1.0.0
