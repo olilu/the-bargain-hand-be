@@ -12,7 +12,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) 
 #this is to include backend dir in sys.path so that we can import from db,main.py
  
-from sqlite_config.sqlite_db_models import TestBase
+from data_adapter.db_models.base import Base
 from data_adapter.session import get_db
 from controller.controller import api_router
  
@@ -35,10 +35,10 @@ def app() -> Generator[FastAPI, Any, None]:
     """
     Create a fresh database on each test case.
     """
-    TestBase.metadata.create_all(engine)  # Create the tables.
+    Base.metadata.create_all(engine)  # Create the tables.
     _app = start_application()
     yield _app
-    TestBase.metadata.drop_all(engine)
+    Base.metadata.drop_all(engine)
  
  
 @pytest.fixture(scope="function")

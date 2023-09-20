@@ -1,12 +1,10 @@
 from sqlalchemy import Column,String,DateTime,Integer
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-import uuid
 
 from data_adapter.db_models.base_class import Base
 
 class Wishlist(Base):
-    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    uuid = Column(String, primary_key=True)
     name = Column(String,nullable=False)
     email = Column(String,nullable=False,index=True)
     schedule_timestamp = Column(DateTime,nullable=False)

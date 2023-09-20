@@ -2,7 +2,7 @@ import logging
 from fastapi import FastAPI
 from config.settings import settings
 from data_adapter.session import engine
-from data_adapter.base import Base
+from data_adapter.db_models.base import Base
 
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
 
