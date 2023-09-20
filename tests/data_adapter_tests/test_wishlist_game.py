@@ -7,7 +7,7 @@ from tests.data_adapter_tests.test_wishlist import create_test_wishlist
 from tests.data_adapter_tests.test_game import game as imported_game
 from data_adapter.game import create_game
 from data_adapter.wishlist import create_new_wishlist
-from data_adapter.wishlist_game import link_game_to_wishlist, get_wishlist_game_by_uuid, get_wishlist_games_by_wishlist_uuid, unlink_game_from_wishlist, get_wishlist_links_by_game_id
+from data_adapter.wishlist_game import link_game_to_wishlist, get_wishlist_game_by_uuid, get_wishlist_games_by_wishlist_uuid, unlink_game_from_wishlist, get_wishlist_links_by_game_id, update_wishlist_game_by_uuid
 
 # Test data
 game = imported_game
@@ -115,5 +115,20 @@ def test_get_wishlist_links_by_game_id(db_session:Session):
     assert result[1].game_id == game_result.id
     assert result[1].price_new == wishlist_game2.price_new
 
+
+# Test update wishlist game by uuid
+def test_update_wishlist_game_by_uuid(db_session:Session):
+    wishlist_result = create_new_wishlist(wishlist,db_session)
+    game_result = create_game(game,db_session)
+    wishlist_game = create_test_wishlist_game(wishlist_result.uuid, game_result.id)
+    result_link = link_game_to_wishlist(wishlist_game,db_session)
+    # Update the wishlist game
+    wishlist_game.price_new = 5.0
+    result = update_wishlist_game_by_uuid(result_link.uuid,wishlist_game,db_session)
+    # Check that the wishlist game is updated
+    search_result = get_wishlist_game_by_uuid(result_link.uuid,db_session)
+    assert result == True
+    assert search_result.price_new == 5.0
+    assert search_result.price_old == 20.0
 
     

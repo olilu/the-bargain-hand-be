@@ -26,6 +26,16 @@ def unlink_game_from_wishlist(wishlist_uuid: str, game_id: str, db: Session):
 def get_wishlist_game_by_uuid(wishlist_game_uuid: str, db: Session,):
     return db.query(WishlistGame).filter(WishlistGame.uuid == wishlist_game_uuid).first()
 
+def update_wishlist_game_by_uuid(wishlist_game_uuid: str, wishlist_game: WishlistGame, db: Session):
+    wishlist_game_model = wishlist_game.model_dump()
+    wishlist_game_model["uuid"] = wishlist_game_uuid
+    existing_wishlist_game = db.query(WishlistGame).filter(WishlistGame.uuid == wishlist_game_uuid)
+    if existing_wishlist_game.first() is None:
+        return False
+    existing_wishlist_game.update(wishlist_game_model)
+    db.commit()
+    return True
+
 def get_wishlist_games_by_wishlist_uuid(wishlist_uuid:str, db:Session):
     select_query = select(WishlistGame,Game).join(Game, WishlistGame.game_id == Game.id, isouter=True).filter(WishlistGame.wishlist_uuid == wishlist_uuid)
     result = db.execute(select_query).all()
