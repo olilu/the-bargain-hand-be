@@ -14,11 +14,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
  
 from data_adapter.db_models.base import Base
 from data_adapter.session import get_db
-from controller.controller import api_router
+from controller.wishlist_controller import api_router as wishlist_controller
  
 def start_application():
     app = FastAPI()
-    app.include_router(api_router)
+    app.include_router(wishlist_controller)
     return app
  
  
