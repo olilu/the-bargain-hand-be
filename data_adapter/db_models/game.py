@@ -5,6 +5,7 @@ from data_adapter.db_models.base_class import Base
 
 class Game(Base):
     id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
     shop = Column(String, nullable=False)
     img_link = Column(String, nullable=False, default="https://via.placeholder.com/150")
     link = Column(String, nullable=False, unique=True)
