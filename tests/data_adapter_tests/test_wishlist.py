@@ -66,9 +66,10 @@ def test_update_wishlist(db_session:Session):
     assert search_result.name == "test wishlist"
     assert search_result.country_code == "CH"
     # Update the wishlist
-    wishlist.name = "test wishlist 2"
-    wishlist.country_code = "US"
-    update_result = update_wishlist(result.uuid,wishlist,db_session)
+    search_result.name = "test wishlist 2"
+    search_result.country_code = "US"
+    wishlist_update = WishlistCreate(**search_result.__dict__)
+    update_result = update_wishlist(wishlist_update,db_session)
     # Check that the wishlist is updated
     search_result = get_wishlist(result.uuid,db_session)
     assert update_result == True

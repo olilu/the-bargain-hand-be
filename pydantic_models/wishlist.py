@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel,EmailStr
+from pydantic import BaseModel,EmailStr,ConfigDict
 from datetime import datetime
 
 class WishlistBase(BaseModel):
@@ -14,3 +14,13 @@ class WishlistCreate(WishlistBase):
     name: str
     email: EmailStr
     country_code: str
+
+class WishlistShow(WishlistBase):
+    name: str
+    email: EmailStr
+    schedule_frequency: int
+    schedule_timestamp: datetime
+    country_code: str
+
+class WishlistUpdate(WishlistShow):
+    uuid: str
