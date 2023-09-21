@@ -4,20 +4,12 @@ from datetime import datetime
 from pydantic_models.game import Game
 from pydantic_models.wishlist_game import WishlistGame
 from tests.data_adapter_tests.test_wishlist import create_test_wishlist
-from tests.data_adapter_tests.test_game import GAME
+from tests.data_adapter_tests.test_game import GAME, GAME2
 from data_adapter.game import create_game
 from data_adapter.wishlist import create_new_wishlist
 from data_adapter.wishlist_game import link_game_to_wishlist, get_wishlist_game_by_uuid, get_wishlist_games_by_wishlist_uuid, unlink_game_from_wishlist, get_wishlist_links_by_game_id, update_wishlist_game_by_uuid
 
 # Test data
-GAME2 = Game(
-    id="EP2333-PPSA01826_00-PATHLESSSIEE0000",
-    name="The Pathless",
-    shop="PlayStation",
-    img_link="https://image.api.playstation.com/vulcan/ap/rnd/202007/1500/PzzL4lymRdZuLEerjeL58HG8.png?w=440&thumb=false",
-    link="https://store.playstation.com/de-ch/product/EP2333-PPSA01826_00-PATHLESSSIEE0000",
-)
-
 WISHLIST = create_test_wishlist()
 
 WISHLIST2 = create_test_wishlist()
@@ -32,7 +24,6 @@ def create_test_wishlist_game(wishlist_uuid: str, game_id: str):
         price_old=20.0,
     )
     return wishlist_game  
-
 
 # Test linking a game to a wishlist
 def test_link_game_to_wishlist(db_session:Session):

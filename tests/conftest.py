@@ -15,10 +15,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data_adapter.db_models.base import Base
 from data_adapter.session import get_db
 from controller.wishlist_controller import api_router as wishlist_controller
+from controller.wishlist_games_controller import api_router as wishlist_games_controller
  
 def start_application():
     app = FastAPI()
     app.include_router(wishlist_controller)
+    app.include_router(wishlist_games_controller)
     return app
  
  

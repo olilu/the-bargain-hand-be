@@ -12,6 +12,14 @@ GAME = Game(
     link="https://store.playstation.com/de-ch/product/EP9000-CUSA00470_00-JOURNEYPS4061115",
 )
 
+GAME2 = Game(
+    id="EP2333-PPSA01826_00-PATHLESSSIEE0000",
+    name="The Pathless",
+    shop="PlayStation",
+    img_link="https://image.api.playstation.com/vulcan/ap/rnd/202007/1500/PzzL4lymRdZuLEerjeL58HG8.png?w=440&thumb=false",
+    link="https://store.playstation.com/de-ch/product/EP2333-PPSA01826_00-PATHLESSSIEE0000",
+)
+
 # Test the create_game function
 def test_create_game(db_session:Session):
     result = create_game(GAME,db_session)
