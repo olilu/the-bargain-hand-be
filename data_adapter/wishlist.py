@@ -25,7 +25,7 @@ def delete_wishlist(wishlist_uuid:str,db:Session):
     db.commit()
     return True
 
-def get_wishlist(wishlist_uuid:str,db:Session):
+def get_wishlist_by_uuid(wishlist_uuid:str,db:Session):
     return db.query(Wishlist).filter(Wishlist.uuid == wishlist_uuid).first()
 
 def update_wishlist(wishlist_uuid:str,wishlist:WishlistCreate,db:Session):

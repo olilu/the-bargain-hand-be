@@ -1,4 +1,4 @@
-import json, re
+import re
 
 WISHLIST_DICT = {
     "name": "test wishlist",
@@ -21,7 +21,7 @@ def valid_uuid(uuid):
     return bool(match)
 
 # Test the /wishlist/create/  endpoint
-def test_wishlist_create(client,):
+def test_wishlist_create(client):
     response = client.post("/wishlist/create/",json=WISHLIST_DICT)
     assert response.status_code == 200
     assert valid_uuid(response.json()["uuid"]) == True
@@ -30,6 +30,24 @@ def test_wishlist_create(client,):
     assert response.json()["schedule_timestamp"] == WISHLIST_DICT["schedule_timestamp"]
     assert response.json()["schedule_frequency"] == 1
     assert response.json()["country_code"] == WISHLIST_DICT["country_code"]
+
+# Test the /wishlist/{uuid} endpoint
+def test_wishlist_get(client):
+    # Create a wishlist
+    response = client.post("/wishlist/create/",json=WISHLIST_DICT)
+    uuid = response.json()["uuid"]
+    # Get the wishlist
+    response = client.get("/wishlist/"+uuid)
+    assert response.status_code == 200
+    assert response.json()["uuid"] == uuid
+    assert response.json()["name"] == WISHLIST_DICT["name"]
+    assert response.json()["email"] == WISHLIST_DICT["email"]
+    assert response.json()["schedule_timestamp"] == WISHLIST_DICT["schedule_timestamp"]
+    assert response.json()["schedule_frequency"] == 1
+    assert response.json()["country_code"] == WISHLIST_DICT["country_code"]
+    # Get a non-existing wishlist
+    response = client.get("/wishlist/not-existing-uuid")
+    assert response.status_code == 404
 
 # Test the /wishlist/all endpoint
 def test_wishlist_all(client):
@@ -60,7 +78,7 @@ def test_wishlist_update(client):
     # Update the wishlist
     response = client.put("/wishlist/update/"+uuid,json=WISHLIST2_DICT)
     assert response.status_code == 200
-    assert response.json()["detail"] == "wishlist successfully updated"
+    assert response.json()["details"] == "wishlist successfully updated"
     # Ensure that the wishlist is updated
     updated_wishlist = client.get("/wishlist/"+uuid)
     assert updated_wishlist.json()["uuid"] == uuid
@@ -69,6 +87,9 @@ def test_wishlist_update(client):
     assert updated_wishlist.json()["schedule_timestamp"] == WISHLIST2_DICT["schedule_timestamp"]
     assert updated_wishlist.json()["schedule_frequency"] == 1
     assert updated_wishlist.json()["country_code"] == "CH"
+    # Update a non-existing wishlist
+    response = client.put("/wishlist/update/not-existing-uuid",json=WISHLIST2_DICT)
+    assert response.status_code == 404
 
 # Test the /wishlist/delete/ endpoint
 def test_wishlist_delete(client):
@@ -78,7 +99,9 @@ def test_wishlist_delete(client):
     # Delete the wishlist
     response = client.delete("/wishlist/delete/"+uuid)
     assert response.status_code == 200
-    assert response.json()["detail"] == "wishlist successfully deleted"
+    assert response.json()["details"] == "wishlist successfully deleted"
     # Ensure that the wishlist is deleted
     response = client.get("/wishlist/all")
     assert len(response.json()) == 0
+    response = client.delete("/wishlist/delete/not-existing-uuid")
+    assert response.status_code == 404

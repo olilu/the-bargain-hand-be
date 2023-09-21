@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from pydantic_models.wishlist import WishlistCreate
-from data_adapter.wishlist import create_new_wishlist, list_wishlists, delete_wishlist, get_wishlist, update_wishlist
+from data_adapter.wishlist import create_new_wishlist, list_wishlists, delete_wishlist, get_wishlist_by_uuid, update_wishlist
 
 def create_test_wishlist():
     wishlist = WishlistCreate(
@@ -48,13 +48,13 @@ def test_delete_wishlist(db_session:Session):
     wishlist = create_test_wishlist()
     result = create_new_wishlist(wishlist,db_session)
     # ensure that the wishlist is created
-    search_result = get_wishlist(result.uuid,db_session)
+    search_result = get_wishlist_by_uuid(result.uuid,db_session)
     assert search_result.name == "test wishlist"
     # Call the delete_wishlist function
     result = delete_wishlist(result.uuid,db_session)
     assert result == True
     # Check that the wishliste is deleted
-    search_result = get_wishlist(search_result.uuid,db_session)
+    search_result = get_wishlist_by_uuid(search_result.uuid,db_session)
     assert search_result is None
     
 # Test the update_wishlist function
@@ -63,7 +63,7 @@ def test_update_wishlist(db_session:Session):
     wishlist = create_test_wishlist()
     result = create_new_wishlist(wishlist,db_session)
     # ensure that the wishlist is created
-    search_result = get_wishlist(result.uuid,db_session)
+    search_result = get_wishlist_by_uuid(result.uuid,db_session)
     assert search_result.name == "test wishlist"
     assert search_result.country_code == "CH"
     # Update the wishlist
@@ -71,7 +71,7 @@ def test_update_wishlist(db_session:Session):
     wishlist.country_code = "US"
     update_result = update_wishlist(result.uuid,wishlist,db_session)
     # Check that the wishlist is updated
-    search_result = get_wishlist(result.uuid,db_session)
+    search_result = get_wishlist_by_uuid(result.uuid,db_session)
     assert update_result == True
     assert search_result.name == "test renamed"
     assert search_result.country_code == "US"
