@@ -1,13 +1,14 @@
 from nintendeals import noe, noa, noj
 from nintendeals.api import prices
 from bs4 import BeautifulSoup
+from typing import List
 import requests
 import difflib
 
 
 from pydantic_models.wishlist_game import WishlistGameFull
 
-def search_nintendo_games(query: str, wishlist_uuid: str, country_code: str, language_code: str):
+def search_nintendo_games(query: str, wishlist_uuid: str, country_code: str, language_code: str) -> List[WishlistGameFull]:
     games = []
     country_language_code = f"{country_code.lower()}_{language_code.lower()}"
     if country_code.upper() in ["US", "CA", "MX"]:
@@ -25,7 +26,7 @@ def search_nintendo_games(query: str, wishlist_uuid: str, country_code: str, lan
         games.append(wishlist_game)
     return games
 
-def scrape_nintendo_image_link(url: str):
+def scrape_nintendo_image_link(url: str) -> str:
     r = requests.get(url)
     soup = BeautifulSoup(r.text, 'html.parser')
     return soup.find("vc-price-box-overlay")[":demo-img-src"].replace("'","")
@@ -51,7 +52,7 @@ def compile_nintendo_wishlist_game(game_info, game_price_info, wishlist_uuid: st
     )
     return wishlist_game
 
-def filter_closest_matches(query:str, game_list: list, limit=10):
+def filter_closest_matches(query:str, game_list: list, limit=10) -> list:
     titles= [game.title for game in game_list]
     closest_matches_titles = difflib.get_close_matches(query, titles, n=limit, cutoff=0.1)
     closest_matches = [game for game in game_list if game.title in closest_matches_titles]
