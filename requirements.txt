@@ -16,3 +16,7 @@ httpx
 
 # email validation
 pydantic[email]
+
+# web scraping
+nintendeals==3.1.1
+beautifulsoup4==4.12.2

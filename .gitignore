@@ -6,6 +6,9 @@ __pycache__/
 # .env files
 *.env
 
+# vscode
+.vscode/
+
 # test DB
 test_db.db
 

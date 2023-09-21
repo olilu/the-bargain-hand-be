@@ -12,10 +12,12 @@ def create_tables():
     Base.metadata.create_all(bind=engine)
 
 def start_application():
+    create_tables()
     app = FastAPI(title=settings.PROJECT_TITLE, verstion=settings.PROJECT_VERSION)
     app.include_router(wishlist_controller)
     app.include_router(wishlist_games_controller)
-    create_tables()
+    # TODO: add include router for price_check_controller
+    # TODO: add include router for search_controller
     return app
 
 
