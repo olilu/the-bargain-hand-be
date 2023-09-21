@@ -7,7 +7,7 @@ class WishlistGameBase(BaseModel):
     game_id: Optional[str] = None
     price_old: Optional[float] = None
     price_new: Optional[float] = None
-    currency: Optional[str] = "CH"
+    currency: Optional[str] = "CHF"
 
 class WishlistGame(WishlistGameBase):
     wishlist_uuid: str

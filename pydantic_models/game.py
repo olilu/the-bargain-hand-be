@@ -1,4 +1,4 @@
-from pydantic import BaseModel,AnyHttpUrl
+from pydantic import BaseModel
 
 class Game(BaseModel):
     id: str

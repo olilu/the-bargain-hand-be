@@ -13,7 +13,6 @@ class WishlistBase(BaseModel):
 class WishlistCreate(WishlistBase):
     name: str
     email: EmailStr
-    country_code: str
 
 class WishlistShow(WishlistBase):
     name: str

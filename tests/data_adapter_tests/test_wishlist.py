@@ -52,8 +52,9 @@ def test_delete_wishlist(db_session:Session):
     assert search_result.name == "test wishlist"
     # Call the delete_wishlist function
     result = delete_wishlist(result.uuid,db_session)
+    assert result == True
     # Check that the wishliste is deleted
-    search_result = get_wishlist(result.uuid,db_session)
+    search_result = get_wishlist(search_result.uuid,db_session)
     assert search_result is None
     
 # Test the update_wishlist function
@@ -66,13 +67,12 @@ def test_update_wishlist(db_session:Session):
     assert search_result.name == "test wishlist"
     assert search_result.country_code == "CH"
     # Update the wishlist
-    search_result.name = "test wishlist 2"
-    search_result.country_code = "US"
-    wishlist_update = WishlistCreate(**search_result.__dict__)
-    update_result = update_wishlist(wishlist_update,db_session)
+    wishlist.name = "test renamed"
+    wishlist.country_code = "US"
+    update_result = update_wishlist(result.uuid,wishlist,db_session)
     # Check that the wishlist is updated
     search_result = get_wishlist(result.uuid,db_session)
     assert update_result == True
-    assert search_result.name == "test wishlist 2"
+    assert search_result.name == "test renamed"
     assert search_result.country_code == "US"
 

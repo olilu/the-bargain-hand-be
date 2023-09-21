@@ -15,8 +15,10 @@ def get_game_by_id(id: str, db: Session):
 
 def delete_game_by_id(id: str, db: Session):
     game_entry = db.query(Game_db_model).filter(Game_db_model.id == id).first()
+    if game_entry is None:
+        return False
     db.delete(game_entry)
     db.commit()
-    return game_entry
+    return True
 
 
