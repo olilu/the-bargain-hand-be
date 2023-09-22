@@ -1,62 +1,30 @@
-from nintendeals import noe, noa, noj
-from nintendeals.api import prices
-from bs4 import BeautifulSoup
 from typing import List
-import requests
-import difflib
+from enum import Enum
 
 
 from pydantic_models.wishlist_game import WishlistGameFull
+from service.utilities.nintendo import NintendoUtilities
 
-def search_nintendo_games(query: str, wishlist_uuid: str, country_code: str, language_code: str) -> List[WishlistGameFull]:
-    games = []
-    country_language_code = f"{country_code.lower()}_{language_code.lower()}"
-    if country_code.upper() in ["US", "CA", "MX"]:
-        shop_region = noa
-    elif country_code.upper() in ["JP"]:
-        shop_region = noj
-    else:
-        shop_region = noe
-    search_results = [result for result in shop_region.search_switch_games(query)]
-    closest_matches = filter_closest_matches(query, search_results)
-    for game in closest_matches:
-        game_info = shop_region.game_info(game.nsuid)
-        game_price_info = prices.get_price(game, country=country_code.upper())
-        wishlist_game = compile_nintendo_wishlist_game(game_info, game_price_info, wishlist_uuid, country_language_code)
-        games.append(wishlist_game)
-    return games
+class Shops(Enum):
+    Nintendo = "Nintendo"
+    PlayStation = "PlayStation"
 
-def scrape_nintendo_image_link(url: str) -> str:
-    r = requests.get(url)
-    soup = BeautifulSoup(r.text, 'html.parser')
-    return soup.find("vc-price-box-overlay")[":demo-img-src"].replace("'","")
+class SearchService:
+    def __init__(self, wishlist_uuid: str, country_code: str, language_code: str):
+        self.wishlist_uuid = wishlist_uuid
+        self.country_code = country_code
+        self.language_code = language_code
 
-def compile_nintendo_wishlist_game(game_info, game_price_info, wishlist_uuid: str, country_language_code: str) -> WishlistGameFull:
-    if game_price_info.on_sale:
-        new_price = game_price_info.sale_value
-    else:
-        new_price = game_price_info.value
-    game_link = getattr(game_info.eshop, country_language_code)
-        
-    wishlist_game = WishlistGameFull(
-        wishlist_uuid=wishlist_uuid,
-        game_id=game_info.nsuid,
-        name=game_info.title,
-        shop="Nintendo",
-        link=game_link,
-        img_link=scrape_nintendo_image_link(game_link),
-        price_new=new_price,
-        price_old=game_price_info.value,
-        currency=game_price_info.currency,
-        country_code=game_price_info.country
-    )
-    return wishlist_game
+    def search(self, query: str, shop: Shops) -> List[WishlistGameFull]:
+        games = []
+        if shop == "Nintendo":
+            nintendo_utilities = NintendoUtilities(self.wishlist_uuid, self.country_code, self.language_code)
+            games = nintendo_utilities.search(query)
+        elif shop == "PlayStation":
+            pass
+        else:
+            raise ValueError(f"Shop not supported: {shop}, valid shops are: {[e.value for e in Shops]}")
+        return games
+    
 
-def filter_closest_matches(query:str, game_list: list, limit=10) -> list:
-    titles= [game.title for game in game_list]
-    closest_matches_titles = difflib.get_close_matches(query, titles, n=limit, cutoff=0.1)
-    closest_matches = [game for game in game_list if game.title in closest_matches_titles]
-    def get_index(element):
-        return closest_matches_titles.index(element.title)
-    closest_matches = sorted(closest_matches, key=get_index)
-    return closest_matches
+

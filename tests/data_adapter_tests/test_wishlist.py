@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
+import pytest
 
 from pydantic_models.wishlist import WishlistCreate
 from data_adapter.wishlist import create_new_wishlist, list_wishlists, delete_wishlist, get_wishlist_by_uuid, update_wishlist
@@ -15,6 +16,7 @@ def create_test_wishlist():
     return wishlist
 
 # Test the create_new_wishlist function and the list_wishlists function
+@pytest.mark.data_adapter
 def test_list_wishlists(db_session:Session):
     test_results = []
     # Create a wishlist
@@ -46,6 +48,7 @@ def test_list_wishlists(db_session:Session):
     assert wishlists[1].uuid is not None
 
 # Test the delete_wishlist function
+@pytest.mark.data_adapter
 def test_delete_wishlist(db_session:Session):
     # Create a wishlist
     wishlist = create_test_wishlist()
@@ -61,6 +64,7 @@ def test_delete_wishlist(db_session:Session):
     assert search_result is None
     
 # Test the update_wishlist function
+@pytest.mark.data_adapter
 def test_update_wishlist(db_session:Session):
     # Create a wishlist
     wishlist = create_test_wishlist()

@@ -1,4 +1,6 @@
-import re
+import pytest
+
+from tests.utils import valid_uuid
 
 WISHLIST_DICT = {
     "name": "test wishlist",
@@ -14,13 +16,8 @@ WISHLIST2_DICT = {
     "country_code": "CH"
 }
 
-
-def valid_uuid(uuid):
-    regex = re.compile('^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$', re.I)
-    match = regex.match(uuid)
-    return bool(match)
-
 # Test the /wishlist/create/  endpoint
+@pytest.mark.api
 def test_wishlist_create(client):
     response = client.post("/wishlist/create/",json=WISHLIST_DICT)
     assert response.status_code == 200
@@ -32,6 +29,7 @@ def test_wishlist_create(client):
     assert response.json()["country_code"] == WISHLIST_DICT["country_code"]
 
 # Test the /wishlist/{uuid} endpoint
+@pytest.mark.api
 def test_wishlist_get(client):
     # Create a wishlist
     response = client.post("/wishlist/create/",json=WISHLIST_DICT)
@@ -50,6 +48,7 @@ def test_wishlist_get(client):
     assert response.status_code == 404
 
 # Test the /wishlist/all endpoint
+@pytest.mark.api
 def test_wishlist_all(client):
     # Create two wishlists
     response = client.post("/wishlist/create/",json=WISHLIST_DICT)
@@ -71,6 +70,7 @@ def test_wishlist_all(client):
     assert response.json()[1]["country_code"] == "CH"
 
 # Test the /wishlist/update/ endpoint
+@pytest.mark.api
 def test_wishlist_update(client):
     # Create a wishlist
     response = client.post("/wishlist/create/",json=WISHLIST_DICT)
@@ -92,6 +92,7 @@ def test_wishlist_update(client):
     assert response.status_code == 404
 
 # Test the /wishlist/delete/ endpoint
+@pytest.mark.api
 def test_wishlist_delete(client):
     # Create a wishlist
     response = client.post("/wishlist/create/",json=WISHLIST_DICT)

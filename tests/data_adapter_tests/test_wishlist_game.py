@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
+import pytest
 
 from pydantic_models.game import Game
 from pydantic_models.wishlist_game import WishlistGame
@@ -16,6 +17,7 @@ WISHLIST2 = create_test_wishlist()
 WISHLIST2.name = "test wishlist 2"
 WISHLIST2.email = "test2@test.com"
 
+@pytest.mark.data_adapter
 def create_test_wishlist_game(wishlist_uuid: str, game_id: str, on_sale: bool = True):
     wishlist_game = WishlistGame(
         wishlist_uuid=wishlist_uuid,
@@ -27,6 +29,7 @@ def create_test_wishlist_game(wishlist_uuid: str, game_id: str, on_sale: bool = 
     return wishlist_game  
 
 # Test linking a game to a wishlist
+@pytest.mark.data_adapter
 def test_link_game_to_wishlist(db_session:Session):
     wishlist_result = create_new_wishlist(WISHLIST,db_session)
     game_result = create_game(GAME,db_session)
@@ -41,6 +44,7 @@ def test_link_game_to_wishlist(db_session:Session):
     assert search_result.uuid == result.uuid
 
 # Test unlinking a game from a wishlist
+@pytest.mark.data_adapter
 def test_unlink_game_from_wishlist(db_session:Session):
     wishlist_result = create_new_wishlist(WISHLIST,db_session)
     game_result = create_game(GAME,db_session)
@@ -56,6 +60,7 @@ def test_unlink_game_from_wishlist(db_session:Session):
 
 
 # Test get full wishlist games infos by wishlist uuid
+@pytest.mark.data_adapter
 def test_get_wishlist_games_by_wishlist_uuid(db_session:Session):
     wishlist_result = create_new_wishlist(WISHLIST,db_session)
     game_result = create_game(GAME,db_session)
@@ -93,6 +98,7 @@ def test_get_wishlist_games_by_wishlist_uuid(db_session:Session):
     assert result[1].link == GAME2.link
 
 # Test get wishlist links by game id
+@pytest.mark.data_adapter
 def test_get_wishlist_links_by_game_id(db_session:Session):
     wishlist_result = create_new_wishlist(WISHLIST,db_session)
     wishlist_result2 = create_new_wishlist(WISHLIST2,db_session)
@@ -114,6 +120,7 @@ def test_get_wishlist_links_by_game_id(db_session:Session):
 
 
 # Test update wishlist game by uuid
+@pytest.mark.data_adapter
 def test_update_wishlist_game_by_uuid(db_session:Session):
     wishlist_result = create_new_wishlist(WISHLIST,db_session)
     game_result = create_game(GAME,db_session)

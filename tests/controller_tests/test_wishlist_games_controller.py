@@ -1,3 +1,5 @@
+import pytest
+
 from pydantic_models.game import Game
 from tests.controller_tests.test_wishlist_controller import WISHLIST_DICT
 from tests.data_adapter_tests.test_game import GAME, GAME2
@@ -18,6 +20,7 @@ def generate_test_game_dict(wishlist_uuid: str, game: Game):
     return game_dict
 
 # Test the /wishlist/{wishlist_uuid}/games endpoint
+@pytest.mark.api
 def test_return_full_wishlist_games(client):
     response = client.post("/wishlist/create/",json=WISHLIST_DICT)
     assert response.status_code == 200
@@ -39,6 +42,7 @@ def test_return_full_wishlist_games(client):
     assert response.json()[1]["game_id"] == game2_dict["game_id"]
 
 # Test the /wishlist/{wishlist_uuid}/add-game endpoint
+@pytest.mark.api
 def test_add_game_to_wishlist(client):
     response = client.post("/wishlist/create/",json=WISHLIST_DICT)
     assert response.status_code == 200
@@ -61,6 +65,7 @@ def test_add_game_to_wishlist(client):
     assert response.status_code == 404
 
 # Test the /wishlist/{wishlist_uuid}/remove-game/{game_id} endpoint
+@pytest.mark.api
 def test_remove_game_from_wishlist(client):
     response = client.post("/wishlist/create/",json=WISHLIST_DICT)
     assert response.status_code == 200

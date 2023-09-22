@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
+import pytest
 
 from pydantic_models.game import Game
 from data_adapter.game import create_game, get_game_by_id, delete_game_by_id
@@ -21,6 +21,7 @@ GAME2 = Game(
 )
 
 # Test the create_game function
+@pytest.mark.data_adapter
 def test_create_game(db_session:Session):
     result = create_game(GAME,db_session)
     search_result = get_game_by_id(result.id,db_session)
@@ -31,6 +32,7 @@ def test_create_game(db_session:Session):
     assert search_result.link == GAME.link
 
 # Test the delete_game_by_id function
+@pytest.mark.data_adapter
 def test_delete_game_by_id(db_session:Session):
     result = create_game(GAME, db_session)
     search_result = get_game_by_id(result.id,db_session)
