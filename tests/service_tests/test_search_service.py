@@ -2,7 +2,6 @@ import pytest
 
 
 from service.search_service import SearchService
-from tests.utils import valid_uuid
 
 @pytest.mark.integration
 @pytest.mark.slow

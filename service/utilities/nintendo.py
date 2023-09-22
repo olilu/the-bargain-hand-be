@@ -5,15 +5,13 @@ from typing import List
 import requests
 import difflib
 
+from service.utilities.shop import ShopUtilities
 from pydantic_models.wishlist_game import WishlistGameFull
 
-class NintendoUtilities:
+class NintendoUtilities(ShopUtilities):
     def __init__(self, wishlist_uuid: str, country_code: str, language_code: str):
-        self.wishlist_uuid = wishlist_uuid
-        self.country_code = country_code
-        self.language_code = language_code
-        self.country_language_code = f"{country_code.lower()}_{language_code.lower()}"
-        self.shop_region = decide_shop_region(country_code)
+        super().__init__(wishlist_uuid, country_code, language_code)
+        self.shop_region = self.get_nintendo_shop_region()
     
     def search(self, query: str) -> List[WishlistGameFull]:
         games = []
@@ -22,51 +20,50 @@ class NintendoUtilities:
         for game in closest_matches:
             game_info = self.shop_region.game_info(game.nsuid)
             game_price_info = prices.get_price(game, country=self.country_code.upper())
-            wishlist_game = compile_nintendo_wishlist_game(game_info, game_price_info, self.wishlist_uuid, self.country_language_code)
+            wishlist_game = self.compile_nintendo_wishlist_game(game_info, game_price_info)
             games.append(wishlist_game)
         return games
     
-    def get_game_info_by_nsuid(self, nsuid: str) -> WishlistGameFull:
+    def get_game_info_by_id(self, nsuid: str) -> WishlistGameFull:
         game_info = self.shop_region.game_info(nsuid)
         game_price_info = prices.get_price(game_info, country=self.country_code.upper())
-        wishlist_game = compile_nintendo_wishlist_game(game_info, game_price_info, "test_uuid", self.country_language_code)
-        return wishlist_game
+        return self.compile_nintendo_wishlist_game(game_info, game_price_info)
+         
     
-def decide_shop_region(country_code: str):
-    if country_code.upper() in ["US", "CA", "MX"]:
-        shop_region = noa
-    elif country_code.upper() in ["JP"]:
-        shop_region = noj
-    else:
-        shop_region = noe
-    return shop_region
+    def get_nintendo_shop_region(self):
+        if self.country_code.upper() in ["US", "CA", "MX"]:
+            shop_region = noa
+        elif self.country_code.upper() in ["JP"]:
+            shop_region = noj
+        else:
+            shop_region = noe
+        return shop_region
+    
+    def compile_nintendo_wishlist_game(self, game_info, game_price_info) -> WishlistGameFull:
+        if game_price_info.on_sale:
+            new_price = game_price_info.sale_value
+        else:
+            new_price = game_price_info.value
+        game_link = getattr(game_info.eshop, self.country_language_code)
+            
+        wishlist_game = WishlistGameFull(
+            wishlist_uuid=self.wishlist_uuid,
+            game_id=game_info.nsuid,
+            name=game_info.title,
+            shop="Nintendo",
+            link=game_link,
+            img_link=scrape_nintendo_image_link(game_link),
+            price_new=new_price,
+            price_old=game_price_info.value,
+            on_sale=game_price_info.on_sale,
+            currency=game_price_info.currency
+        )
+        return wishlist_game
 
 def scrape_nintendo_image_link(url: str) -> str:
     r = requests.get(url)
     soup = BeautifulSoup(r.text, 'html.parser')
     return soup.find("vc-price-box-overlay")[":demo-img-src"].replace("'","")
-
-def compile_nintendo_wishlist_game(game_info, game_price_info, wishlist_uuid: str, country_language_code: str) -> WishlistGameFull:
-    if game_price_info.on_sale:
-        new_price = game_price_info.sale_value
-    else:
-        new_price = game_price_info.value
-    game_link = getattr(game_info.eshop, country_language_code)
-        
-    wishlist_game = WishlistGameFull(
-        wishlist_uuid=wishlist_uuid,
-        game_id=game_info.nsuid,
-        name=game_info.title,
-        shop="Nintendo",
-        link=game_link,
-        img_link=scrape_nintendo_image_link(game_link),
-        price_new=new_price,
-        price_old=game_price_info.value,
-        on_sale=game_price_info.on_sale,
-        currency=game_price_info.currency,
-        country_code=game_price_info.country
-    )
-    return wishlist_game
 
 def filter_closest_matches(query:str, game_list: list, limit=10) -> list:
     titles= [game.title for game in game_list]
