@@ -20,3 +20,7 @@ pydantic[email]
 # web scraping
 nintendeals==3.1.1
 beautifulsoup4==4.12.2
+
+# for async tasks
+asyncio==3.4.3
+aiohttp==3.8.5
