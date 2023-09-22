@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 from typing import Optional
 
 class WishlistGameBase(BaseModel):
@@ -7,7 +7,8 @@ class WishlistGameBase(BaseModel):
     game_id: Optional[str] = None
     price_old: Optional[float] = None
     price_new: Optional[float] = None
-    currency: Optional[str] = "CHF"
+    currency: Optional[constr(max_length=3,to_upper=True)] = "CHF"
+    on_sale: Optional[bool] = False
 
 class WishlistGame(WishlistGameBase):
     wishlist_uuid: str

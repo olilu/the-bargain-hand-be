@@ -50,6 +50,8 @@ def get_wishlist_games_by_wishlist_uuid(wishlist_uuid:str, db:Session):
                 game_id=wishlist_game.game_id,
                 price_new=wishlist_game.price_new,
                 price_old=wishlist_game.price_old,
+                currency=wishlist_game.currency,
+                on_sale=wishlist_game.on_sale,
                 name=game.name,
                 shop=game.shop,
                 img_link=game.img_link,

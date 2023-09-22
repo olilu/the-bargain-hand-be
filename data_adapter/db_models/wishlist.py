@@ -9,5 +9,6 @@ class Wishlist(Base):
     email = Column(String,nullable=False,index=True)
     schedule_timestamp = Column(DateTime,nullable=False)
     schedule_frequency = Column(Integer,nullable=False,default=1)
-    country_code = Column(String,nullable=False,default="CH")
+    country_code = Column(String(2),nullable=False,default="CH")
+    language_code = Column(String(2),nullable=False,default="de")
     wishlist_game = relationship("WishlistGame",back_populates="wishlist")

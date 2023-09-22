@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel,EmailStr,ConfigDict
+from pydantic import BaseModel,EmailStr,constr
 from datetime import datetime
 
 class WishlistBase(BaseModel):
@@ -8,7 +8,8 @@ class WishlistBase(BaseModel):
     email: Optional[EmailStr] = None
     schedule_frequency: Optional[int] = 1
     schedule_timestamp: Optional[datetime] = datetime.now()
-    country_code: Optional[str] = "CH"
+    country_code: Optional[constr(max_length=2, to_upper=True)] = "CH"
+    language_code: Optional[constr(max_length=2, to_lower=True)] = "de"
 
 class WishlistCreate(WishlistBase):
     name: str
@@ -19,7 +20,8 @@ class WishlistShow(WishlistBase):
     email: EmailStr
     schedule_frequency: int
     schedule_timestamp: datetime
-    country_code: str
+    country_code: constr(max_length=2, to_upper=True)
+    language_code: constr(max_length=2, to_lower=True)
 
 class WishlistUpdate(WishlistShow):
     uuid: str

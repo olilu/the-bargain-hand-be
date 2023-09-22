@@ -16,12 +16,13 @@ WISHLIST2 = create_test_wishlist()
 WISHLIST2.name = "test wishlist 2"
 WISHLIST2.email = "test2@test.com"
 
-def create_test_wishlist_game(wishlist_uuid: str, game_id: str):
+def create_test_wishlist_game(wishlist_uuid: str, game_id: str, on_sale: bool = True):
     wishlist_game = WishlistGame(
         wishlist_uuid=wishlist_uuid,
         game_id=game_id,
         price_new=10.0,
         price_old=20.0,
+        on_sale=on_sale,
     )
     return wishlist_game  
 
@@ -36,6 +37,7 @@ def test_link_game_to_wishlist(db_session:Session):
     assert search_result.game_id == wishlist_game.game_id
     assert search_result.price_new == wishlist_game.price_new
     assert search_result.price_old == wishlist_game.price_old
+    assert search_result.on_sale == wishlist_game.on_sale
     assert search_result.uuid == result.uuid
 
 # Test unlinking a game from a wishlist
@@ -59,9 +61,13 @@ def test_get_wishlist_games_by_wishlist_uuid(db_session:Session):
     game_result = create_game(GAME,db_session)
     game2_result = create_game(GAME2,db_session)
     wishlist_game = create_test_wishlist_game(wishlist_result.uuid, game_result.id)
-    wishlist_game2 = create_test_wishlist_game(wishlist_result.uuid, game2_result.id)
+    print("wishlist_game.on_sale: ",wishlist_game.on_sale)
+    wishlist_game2 = create_test_wishlist_game(wishlist_result.uuid, game2_result.id, on_sale=False)
+    print("wishlist_game2.on_sale: ",wishlist_game2.on_sale)
     result_link = link_game_to_wishlist(wishlist_game,db_session)
+    print("result_link.on_sale: ",result_link.on_sale)
     result_link2 = link_game_to_wishlist(wishlist_game2,db_session)
+    print("result_link2.on_sale: ",result_link2.on_sale)
     # get wishlist games infos by wishlist uuid
     print("wishlist_result.uuid: ",wishlist_result.uuid)
     result = get_wishlist_games_by_wishlist_uuid(wishlist_result.uuid,db_session)
@@ -71,6 +77,7 @@ def test_get_wishlist_games_by_wishlist_uuid(db_session:Session):
     assert result[0].game_id == wishlist_game.game_id
     assert result[0].price_new == result_link.price_new
     assert result[0].price_old == result_link.price_old
+    assert result[0].on_sale == result_link.on_sale
     assert result[0].name == GAME.name
     assert result[0].shop == GAME.shop
     assert result[0].img_link == GAME.img_link
@@ -79,6 +86,7 @@ def test_get_wishlist_games_by_wishlist_uuid(db_session:Session):
     assert result[1].game_id == wishlist_game2.game_id
     assert result[1].price_new == result_link2.price_new
     assert result[1].price_old == result_link2.price_old
+    assert result[1].on_sale == result_link2.on_sale
     assert result[1].name == GAME2.name
     assert result[1].shop == GAME2.shop
     assert result[1].img_link == GAME2.img_link

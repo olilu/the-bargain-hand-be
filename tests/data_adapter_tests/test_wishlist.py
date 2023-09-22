@@ -10,6 +10,7 @@ def create_test_wishlist():
         email="test@test.com",
         schedule_timestamp=datetime.now(),
         country_code="CH",
+        language_code="de"
     )
     return wishlist
 
@@ -35,6 +36,8 @@ def test_list_wishlists(db_session:Session):
     assert wishlists[1].email == "test2@test.com"
     assert wishlists[0].country_code == wishlist.country_code
     assert wishlists[1].country_code == wishlist.country_code
+    assert wishlists[0].language_code == wishlist.language_code
+    assert wishlists[1].language_code == wishlist.language_code
     assert wishlists[0].schedule_frequency == wishlist.schedule_frequency
     assert wishlists[1].schedule_frequency == wishlist.schedule_frequency
     assert wishlists[0].schedule_timestamp == wishlist.schedule_timestamp
@@ -69,10 +72,12 @@ def test_update_wishlist(db_session:Session):
     # Update the wishlist
     wishlist.name = "test renamed"
     wishlist.country_code = "US"
+    wishlist.language_code = "en"
     update_result = update_wishlist(result.uuid,wishlist,db_session)
     # Check that the wishlist is updated
     search_result = get_wishlist_by_uuid(result.uuid,db_session)
     assert update_result == True
     assert search_result.name == "test renamed"
     assert search_result.country_code == "US"
+    assert search_result.language_code == "en"
 
