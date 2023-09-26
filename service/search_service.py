@@ -11,16 +11,18 @@ class SearchService:
         self.country_code = country_code
         self.language_code = language_code
 
-    def search(self, query: str, shop: str) -> List[WishlistGameFull]:
-        games = []
+    def get_search_service(self, shop: str):
         if shop == "Nintendo":
-            nintendo_utilities = NintendoUtilities(self.wishlist_uuid, self.country_code, self.language_code)
-            games = nintendo_utilities.search(query)
+            return NintendoUtilities(self.wishlist_uuid, self.country_code, self.language_code)
         elif shop == "PlayStation":
-            ps_utilities = PlayStationUtilities(self.wishlist_uuid, self.country_code, self.language_code)
-            games = ps_utilities.search(query)
+            return PlayStationUtilities(self.wishlist_uuid, self.country_code, self.language_code)
         else:
             raise ValueError(f"Shop not supported: {shop}, valid shops are: PlayStation, Nintendo")
+
+    def search(self, query: str, shop: str) -> List[WishlistGameFull]:
+        games = []
+        shop_utilities = self.get_search_service(shop)
+        games = shop_utilities.search(query)
         return games
     
 

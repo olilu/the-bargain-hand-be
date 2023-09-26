@@ -16,11 +16,13 @@ from data_adapter.db_models.base import Base
 from data_adapter.session import get_db
 from controller.wishlist_controller import api_router as wishlist_controller
 from controller.wishlist_games_controller import api_router as wishlist_games_controller
+from controller.search_controller import api_router as search_controller
  
 def start_application():
     app = FastAPI()
     app.include_router(wishlist_controller)
     app.include_router(wishlist_games_controller)
+    app.include_router(search_controller)
     return app
  
  

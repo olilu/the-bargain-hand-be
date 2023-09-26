@@ -13,7 +13,8 @@ WISHLIST2_DICT = {
     "name": "test wishlist2",
     "email": "test2@example.com",
     "schedule_timestamp": "2023-09-20T17:05:10.173031",
-    "country_code": "CH"
+    "country_code": "CH",
+    "language_code": "de"
 }
 
 # Test the /wishlist/create/  endpoint
