@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
 import pytest
 
 from pydantic_models.game import Game

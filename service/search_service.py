@@ -2,20 +2,19 @@ from typing import List
 
 
 from pydantic_models.wishlist_game import WishlistGameFull
+from pydantic_models.wishlist import WishlistFull
 from service.utilities.nintendo import NintendoUtilities
 from service.utilities.playstation import PlayStationUtilities
 
 class SearchService:
-    def __init__(self, wishlist_uuid: str, country_code: str, language_code: str):
-        self.wishlist_uuid = wishlist_uuid
-        self.country_code = country_code
-        self.language_code = language_code
+    def __init__(self, wishlist: WishlistFull):
+        self.wishlist = wishlist
 
     def get_search_service(self, shop: str):
         if shop == "Nintendo":
-            return NintendoUtilities(self.wishlist_uuid, self.country_code, self.language_code)
+            return NintendoUtilities(self.wishlist.uuid, self.wishlist.country_code, self.wishlist.language_code)
         elif shop == "PlayStation":
-            return PlayStationUtilities(self.wishlist_uuid, self.country_code, self.language_code)
+            return PlayStationUtilities(self.wishlist.uuid, self.wishlist.country_code, self.wishlist.language_code)
         else:
             raise ValueError(f"Shop not supported: {shop}, valid shops are: PlayStation, Nintendo")
 

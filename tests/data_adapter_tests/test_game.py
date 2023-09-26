@@ -8,7 +8,7 @@ GAME = Game(
     id="EP9000-CUSA00470_00-JOURNEYPS4061115",
     name="Journey",
     shop="PlayStation",
-    img_link="https://image.api.playstation.com/vulcan/img/rnd/202010/2917/Cj8ngIRc3MB1uhNR40BQhzXv.png?w=440&thumb=false",
+    img_link="https://image.api.playstation.com/vulcan/img/rnd/202010/2917/Cj8ngIRc3MB1uhNR40BQhzXv.png",
     link="https://store.playstation.com/de-ch/product/EP9000-CUSA00470_00-JOURNEYPS4061115",
 )
 
@@ -16,7 +16,7 @@ GAME2 = Game(
     id="EP2333-PPSA01826_00-PATHLESSSIEE0000",
     name="The Pathless",
     shop="PlayStation",
-    img_link="https://image.api.playstation.com/vulcan/ap/rnd/202007/1500/PzzL4lymRdZuLEerjeL58HG8.png?w=440&thumb=false",
+    img_link="https://image.api.playstation.com/vulcan/ap/rnd/202007/1500/PzzL4lymRdZuLEerjeL58HG8.png",
     link="https://store.playstation.com/de-ch/product/EP2333-PPSA01826_00-PATHLESSSIEE0000",
 )
 

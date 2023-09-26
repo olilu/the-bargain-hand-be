@@ -2,16 +2,25 @@ import pytest
 import re
 
 from service.search_service import SearchService
+from pydantic_models.wishlist import WishlistFull
 
 PRICE_REGEX = r"^\d+(.\d{1,2})"
+
+WISHLIST = WishlistFull(
+        uuid="test_uuid",
+        name="test_name",
+        email="test@example.com",
+        schedule_timestamp="2023-09-20T17:05:10.173031",
+        schedule_frequency=1,
+        country_code="CH",
+        language_code="de",
+    )
 
 @pytest.mark.integration
 @pytest.mark.slow
 def test_nintendo_search():
     search_service = SearchService(
-        wishlist_uuid="test_uuid",
-        country_code="CH",
-        language_code="de"
+        wishlist=WISHLIST
     )
     search_results = search_service.search(query="Abzû",shop="Nintendo")
     assert "Abzû".upper() in [game.name for game in search_results]
@@ -29,9 +38,7 @@ def test_nintendo_search():
 @pytest.mark.slow
 def test_playstation_search():
     search_service = SearchService(
-        wishlist_uuid="test_uuid",
-        country_code="CH",
-        language_code="de"
+        wishlist=WISHLIST
     )
     search_results = search_service.search(query="ghost of a tale",shop="PlayStation")
     assert "Ghost of a Tale" in [game.name for game in search_results]
@@ -48,9 +55,7 @@ def test_playstation_search():
 @pytest.mark.integration
 def test_unknown_shop_search():
     search_service = SearchService(
-        wishlist_uuid="test_uuid",
-        country_code="CH",
-        language_code="de"
+        wishlist=WISHLIST
     )
     with pytest.raises(ValueError):
         search_service.search(query="Abzû",shop="Unknown")

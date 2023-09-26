@@ -19,10 +19,21 @@ class PlayStationUtilities(ShopUtilities):
         search_results = self.scrape_playstation_search_results(query)
         return search_results
     
-    def get_game_info_by_id(self, game_id: str, img_url: str) -> WishlistGameFull:
-        url = f"{self.base_url}/{self.country_language_code}/product/{game_id}"
-        return self.scrape_playstation_game_info(url, img_url)
+    def price_check(self, game_list: List[WishlistGameFull]) -> List[WishlistGameFull]:
+        updated_game_list = []
+        links = []
+        img_links = []
+        for game in game_list:
+            links.append(game.link)
+            img_links.append(game.img_link)
+        loop = get_or_create_eventloop()
+        updated_game_list = loop.run_until_complete(self.scrape_playstation_games_async(links, img_links))
+        cheaper_games = self.compare_prices(game_list, updated_game_list) 
+        return cheaper_games
     
+    # def get_game_info_by_id(self, game_id: str, img_url: str) -> WishlistGameFull:
+    #     url = f"{self.base_url}/{self.country_language_code}/product/{game_id}"
+    #     return self.scrape_playstation_game_info(url, img_url)
 
     def scrape_playstation_search_results(self, query: str) -> List[WishlistGameFull]:
         r = requests.get(self.search_url+query)
@@ -35,6 +46,7 @@ class PlayStationUtilities(ShopUtilities):
         if len(links) > 10:
             links = links[:10]
             img_links = img_links[:10]
+        links = [f"{self.base_url}{link}" for link in links]
         loop = get_or_create_eventloop()
         games = loop.run_until_complete(self.scrape_playstation_games_async(links, img_links))
         return games
@@ -43,7 +55,7 @@ class PlayStationUtilities(ShopUtilities):
         async with aiohttp.ClientSession() as session:
             tasks = []
             for index, link in enumerate(links):
-                url = f"{self.base_url}{link}"
+                url = link
                 img_url = img_links[index]
                 tasks.append(asyncio.ensure_future(self.scrape_playstation_game_info_async(session, url, img_url)))
             games = await asyncio.gather(*tasks)
@@ -69,24 +81,24 @@ class PlayStationUtilities(ShopUtilities):
             )
             return ps_game
 
-    def scrape_playstation_game_info(self, url: str, img_url: str) -> WishlistGameFull:
-        r = requests.get(url)
-        soup = BeautifulSoup(r.text, 'html.parser', parse_only=SoupStrainer("main"))
-        currency, price_new, on_sale, price_old = retrieve_price_info(soup)
-        
-        ps_game = WishlistGameFull(
-            wishlist_uuid=self.wishlist_uuid,
-            game_id=url.split("/")[-1],
-            name=soup.select('h1[data-qa="mfe-game-title#name"]')[0].decode_contents(),
-            shop="PlayStation",
-            link=url,
-            img_link=img_url,
-            price_new=price_new,
-            price_old=price_old,
-            on_sale=on_sale,
-            currency=currency
-        )
-        return ps_game
+    # def scrape_playstation_game_info(self, url: str, img_url: str) -> WishlistGameFull:
+    #     r = requests.get(url)
+    #     soup = BeautifulSoup(r.text, 'html.parser', parse_only=SoupStrainer("main"))
+    #     currency, price_new, on_sale, price_old = retrieve_price_info(soup)
+    #     
+    #     ps_game = WishlistGameFull(
+    #         wishlist_uuid=self.wishlist_uuid,
+    #         game_id=url.split("/")[-1],
+    #         name=soup.select('h1[data-qa="mfe-game-title#name"]')[0].decode_contents(),
+    #         shop="PlayStation",
+    #         link=url,
+    #         img_link=img_url,
+    #         price_new=price_new,
+    #         price_old=price_old,
+    #         on_sale=on_sale,
+    #         currency=currency
+    #     )
+    #     return ps_game
         
     #def scrape_playstation_search_results_sync(self, query: str) -> List[WishlistGameFull]:
     #    r = requests.get(self.search_url+query)

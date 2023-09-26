@@ -6,6 +6,7 @@ from data_adapter.db_models.base import Base
 from controller.wishlist_controller import api_router as wishlist_controller
 from controller.wishlist_games_controller import api_router as wishlist_games_controller
 from controller.search_controller import api_router as search_controller
+from controller.price_check_controller import api_router as price_check_controller
 
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
 
@@ -18,8 +19,7 @@ def start_application():
     app.include_router(wishlist_controller)
     app.include_router(wishlist_games_controller)
     app.include_router(search_controller)
-    # TODO: add include router for price_check_controller
-    # TODO: add include router for search_controller
+    app.include_router(price_check_controller)
     return app
 
 

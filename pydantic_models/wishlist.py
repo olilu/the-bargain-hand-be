@@ -8,8 +8,8 @@ class WishlistBase(BaseModel):
     email: Optional[EmailStr] = None
     schedule_frequency: Optional[int] = 1
     schedule_timestamp: Optional[datetime] = datetime.now()
-    country_code: Optional[constr(max_length=2, to_upper=True)] = "CH"
-    language_code: Optional[constr(max_length=2, to_lower=True)] = "de"
+    country_code: Optional[constr(max_length=2, to_upper=True, pattern="^[A-Z]{2}$")] = "CH"
+    language_code: Optional[constr(max_length=2, to_lower=True, pattern="^[a-z]{2}$")] = "de"
 
 class WishlistCreate(WishlistBase):
     name: str
@@ -20,8 +20,8 @@ class WishlistShow(WishlistBase):
     email: EmailStr
     schedule_frequency: int
     schedule_timestamp: datetime
-    country_code: constr(max_length=2, to_upper=True)
-    language_code: constr(max_length=2, to_lower=True)
+    country_code: constr(max_length=2, to_upper=True, pattern="^[A-Z]{2}$")
+    language_code: constr(max_length=2, to_lower=True, pattern="^[a-z]{2}$")
 
-class WishlistUpdate(WishlistShow):
+class WishlistFull(WishlistShow):
     uuid: str

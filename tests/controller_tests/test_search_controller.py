@@ -11,7 +11,7 @@ def test_search_game_nintendo(client):
     shop = "Nintendo"
     wishlist_response = client.post("/wishlist/create/",json=WISHLIST2_DICT)
     assert wishlist_response.status_code == 200
-    search_response = client.post("/search/game?query="+query+"&shop="+shop,json=wishlist_response.json())
+    search_response = client.get("/search/game?query="+query+"&shop="+shop+"&wishlist_uuid="+wishlist_response.json()['uuid'])
     assert search_response.status_code == 200
     assert len(search_response.json()) > 0
     assert search_response.json()[0]["name"] == query.upper()
@@ -32,7 +32,7 @@ def test_search_game_playstation(client):
     shop = "PlayStation"
     wishlist_response = client.post("/wishlist/create/",json=WISHLIST2_DICT)
     assert wishlist_response.status_code == 200
-    search_response = client.post("/search/game?query="+query+"&shop="+shop,json=wishlist_response.json())
+    search_response = client.get("/search/game?query="+query+"&shop="+shop+"&wishlist_uuid="+wishlist_response.json()['uuid'])
     assert search_response.status_code == 200
     assert len(search_response.json()) > 0
     assert search_response.json()[0]["name"] == "Ghost of a Tale"
