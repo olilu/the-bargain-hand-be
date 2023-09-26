@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from tests.controller_tests.test_wishlist_controller import WISHLIST2_DICT
 from data_adapter.wishlist_game import get_wishlist_game_by_uuid
+from config.settings import settings
 
 NINTENDO_GAME= {
     "name": "Abzû",
@@ -29,7 +30,10 @@ PLAYSTATION_GAME={
 
 @pytest.mark.api
 @pytest.mark.slow
+@pytest.mark.skipif(not settings.TEST_RECEIVER_EMAIL, reason="No test receiver email set")
 def test_price_check_controller(client, db_session:Session):
+    wishlist = WISHLIST2_DICT
+    wishlist["email"] = settings.TEST_RECEIVER_EMAIL
     wishlist_response = client.post("/wishlist/create/",json=WISHLIST2_DICT)
     assert wishlist_response.status_code == 200
     wishlist = wishlist_response.json()

@@ -23,17 +23,5 @@ def check_for_bargains(wishlist_uuid: str, db: Session = Depends(get_db)):
         wishlist=wishlist,
         wishlist_games=wishlist_games
     )
-    bargains = price_check_service.check_bargains()
-    for bargain in bargains:
-        wishlist_game = WishlistGame(
-            uuid=bargain.uuid,
-            game_id=bargain.game_id,
-            wishlist_uuid=bargain.wishlist_uuid,
-            price_old=bargain.price_old,
-            price_new=bargain.price_new,
-            on_sale=bargain.on_sale,
-            currency=bargain.currency,
-
-        )
-        update_wishlist_game_by_uuid(bargain.uuid, wishlist_game, db)
+    bargains = price_check_service.check_bargains(db=db)
     return bargains

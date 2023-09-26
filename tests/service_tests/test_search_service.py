@@ -24,7 +24,6 @@ def test_nintendo_search():
     )
     search_results = search_service.search(query="Abzû",shop="Nintendo")
     assert "Abzû".upper() in [game.name for game in search_results]
-
     assert search_results[0].game_id == "70010000012835"
     assert search_results[0].wishlist_uuid == "test_uuid"
     assert search_results[0].shop == "Nintendo"
@@ -42,7 +41,6 @@ def test_playstation_search():
     )
     search_results = search_service.search(query="ghost of a tale",shop="PlayStation")
     assert "Ghost of a Tale" in [game.name for game in search_results]
-
     assert search_results[0].game_id == "EP1302-CUSA14370_00-GHOSTOFATALE0000"
     assert search_results[0].wishlist_uuid == "test_uuid"
     assert search_results[0].shop == "PlayStation"

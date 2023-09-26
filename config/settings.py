@@ -16,4 +16,10 @@ class Settings:
     POSTGRES_DB : str = os.getenv("POSTGRES_DB")
     DATABASE_URL: str = f"postgresql+psycopg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
+    SMTP_SERVER: str = os.getenv("SMTP_SERVER")
+    SMTP_PORT: str = os.getenv("SMTP_PORT")
+    SENDER_EMAIL: str = os.getenv("SMTP_SENDER_EMAIL")
+    SENDER_PASSWORD: str = os.getenv("SMTP_SENDER_PASSWORD")
+    TEST_RECEIVER_EMAIL: str = os.getenv("TEST_RECEIVER_EMAIL")
+
 settings = Settings()
