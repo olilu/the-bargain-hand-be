@@ -3,15 +3,9 @@
 
 name: Test & Deploy Python Application
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
+on: push
 permissions:
   contents: read
-
 jobs:
   test:
     env:
