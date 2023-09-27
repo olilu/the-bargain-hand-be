@@ -19,7 +19,7 @@ class PlayStationUtilities(ShopUtilities):
         search_results = self.scrape_playstation_search_results(query)
         return search_results
     
-    def price_check(self, game_list: List[WishlistGameFull]) -> List[WishlistGameFull]:
+    def price_check(self, game_list: List[WishlistGameFull]) -> (List[WishlistGameFull], List[WishlistGameFull]):
         updated_game_list = []
         links = []
         img_links = []
@@ -28,8 +28,8 @@ class PlayStationUtilities(ShopUtilities):
             img_links.append(game.img_link)
         loop = get_or_create_eventloop()
         updated_game_list = loop.run_until_complete(self.scrape_playstation_games_async(links, img_links))
-        cheaper_games = self.compare_prices(game_list, updated_game_list) 
-        return cheaper_games
+        cheaper_games, updated_games = self.compare_prices(game_list, updated_game_list) 
+        return cheaper_games, updated_games
     
     # def get_game_info_by_id(self, game_id: str, img_url: str) -> WishlistGameFull:
     #     url = f"{self.base_url}/{self.country_language_code}/product/{game_id}"

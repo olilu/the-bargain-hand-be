@@ -24,13 +24,13 @@ class NintendoUtilities(ShopUtilities):
             games.append(wishlist_game)
         return games
     
-    def price_check(self, game_list: List[WishlistGameFull]) -> List[WishlistGameFull]:
+    def price_check(self, game_list: List[WishlistGameFull]) -> (List[WishlistGameFull], List[WishlistGameFull]):
         updated_game_list = []
         for game in game_list:
             game_info = self.get_game_info_by_id(game.game_id)
             updated_game_list.append(game_info)
-        cheaper_games = self.compare_prices(game_list, updated_game_list) 
-        return cheaper_games
+        cheaper_games, updated_games = self.compare_prices(game_list, updated_game_list) 
+        return cheaper_games,updated_games
     
     def get_game_info_by_id(self, nsuid: str) -> WishlistGameFull:
         game_info = self.shop_region.game_info(nsuid)

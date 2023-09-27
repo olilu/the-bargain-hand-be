@@ -17,12 +17,12 @@ WISHLIST2.name = "test wishlist 2"
 WISHLIST2.email = "test2@test.com"
 
 @pytest.mark.data_adapter
-def create_test_wishlist_game(wishlist_uuid: str, game_id: str, on_sale: bool = True):
+def create_test_wishlist_game(wishlist_uuid: str, game_id: str, on_sale: bool = True, price_new: float = 10.0, price_old: float = 20.0):
     wishlist_game = WishlistGame(
         wishlist_uuid=wishlist_uuid,
         game_id=game_id,
-        price_new=10.0,
-        price_old=20.0,
+        price_new=price_new,
+        price_old=price_old,
         on_sale=on_sale,
     )
     return wishlist_game  
