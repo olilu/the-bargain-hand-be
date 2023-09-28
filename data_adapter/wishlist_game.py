@@ -4,6 +4,7 @@ import uuid
 
 from data_adapter.db_models.wishlist_game import WishlistGame
 from data_adapter.db_models.game import Game
+from data_adapter.game import delete_game_by_id
 from pydantic_models.wishlist_game import WishlistGameFull
 
 def link_game_to_wishlist(wishlist_game: WishlistGame, db: Session,):
@@ -59,6 +60,19 @@ def get_wishlist_games_by_wishlist_uuid(wishlist_uuid:str, db:Session):
             )
         )
     return wishlist_games
+
+def delete_wishlist_games_by_wishlist_uuid(wishlist_uuid:str, db:Session):
+    games_in_wishlist = db.query(WishlistGame).filter(WishlistGame.wishlist_uuid == wishlist_uuid).all()
+    games = []
+    for game_link in games_in_wishlist:
+        games.append(game_link.game_id)
+        db.delete(game_link)
+        db.commit()
+    for game_id in games:
+        remaining_links = get_wishlist_links_by_game_id(game_id, db)
+        if remaining_links == []:
+            delete_game_by_id(game_id, db)
+    return True
 
 def get_wishlist_links_by_game_id(game_id:str, db:Session):
     return db.query(WishlistGame).filter(WishlistGame.game_id == game_id).all()

@@ -1,5 +1,7 @@
 import logging
 from fastapi import FastAPI, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+
 from config.settings import settings
 from data_adapter.session import engine, SessionLocal
 from data_adapter.db_models.base import Base
@@ -11,6 +13,10 @@ from service.utilities.tasks import repeat_every
 from service.price_check_service import run_price_checks_all_wishlists
 
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5173"
+]
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
@@ -22,6 +28,13 @@ def start_application():
     app.include_router(wishlist_games_controller)
     app.include_router(search_controller)
     app.include_router(price_check_controller)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+)
     return app
 
 

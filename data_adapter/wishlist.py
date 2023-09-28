@@ -3,6 +3,7 @@ import uuid
 
 from pydantic_models.wishlist import WishlistCreate
 from data_adapter.db_models.wishlist import Wishlist
+from data_adapter.wishlist_game import delete_wishlist_games_by_wishlist_uuid
 
 def create_new_wishlist(wishlist:WishlistCreate,db:Session):
     wishlist_model = wishlist.model_dump()
@@ -21,6 +22,7 @@ def delete_wishlist(wishlist_uuid:str,db:Session):
     wishlist = db.query(Wishlist).filter(Wishlist.uuid == wishlist_uuid).first()
     if wishlist is None:
         return False
+    delete_wishlist_games_by_wishlist_uuid(wishlist_uuid,db)
     db.delete(wishlist)
     db.commit()
     return True

@@ -3,7 +3,11 @@ from datetime import datetime
 import pytest
 
 from pydantic_models.wishlist import WishlistCreate
+from pydantic_models.wishlist_game import WishlistGame
 from data_adapter.wishlist import create_new_wishlist, list_wishlists, delete_wishlist, get_wishlist_by_uuid, update_wishlist
+from data_adapter.game import create_game, get_game_by_id
+from data_adapter.wishlist_game import link_game_to_wishlist, get_wishlist_game_by_uuid
+from tests.data_adapter_tests.test_game import GAME
 
 def create_test_wishlist():
     wishlist = WishlistCreate(
@@ -56,12 +60,29 @@ def test_delete_wishlist(db_session:Session):
     # ensure that the wishlist is created
     search_result = get_wishlist_by_uuid(result.uuid,db_session)
     assert search_result.name == "test wishlist"
+    # Create games and link them to the wishlist
+    game_result = create_game(GAME,db_session)
+    assert game_result.id is not None
+    wishlist_game = WishlistGame(
+        wishlist_uuid=search_result.uuid,
+        game_id=game_result.id,
+        price_new=10.00,
+        price_old=10.00,
+        on_sale=False,
+    )
+    link_result = link_game_to_wishlist(wishlist_game,db_session)
+    assert link_result is not None
     # Call the delete_wishlist function
     result = delete_wishlist(result.uuid,db_session)
     assert result == True
     # Check that the wishliste is deleted
     search_result = get_wishlist_by_uuid(search_result.uuid,db_session)
     assert search_result is None
+    # Check that the games are deleted
+    search_result = get_wishlist_game_by_uuid(link_result.uuid,db_session)
+    assert search_result is None
+    game_result = get_game_by_id(game_result.id,db_session)
+    assert game_result is None
     
 # Test the update_wishlist function
 @pytest.mark.data_adapter
