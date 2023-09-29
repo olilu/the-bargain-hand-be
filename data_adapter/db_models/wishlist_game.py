@@ -10,6 +10,6 @@ class WishlistGame(Base):
     price_old = Column(Double,nullable=True)
     price_new = Column(Double,nullable=True)
     on_sale = Column(Boolean,nullable=True, default=False)
-    currency = Column(String,nullable=False,default="CHF")
+    currency = Column(String(3),nullable=False,default="CHF")
     wishlist = relationship("Wishlist",back_populates="wishlist_game")
     game = relationship("Game",back_populates="wishlist_game")

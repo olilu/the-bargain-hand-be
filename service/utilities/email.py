@@ -1,4 +1,5 @@
 import smtplib, ssl
+import locale
 from typing import List
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -6,8 +7,8 @@ from email.mime.multipart import MIMEMultipart
 from config.settings import settings
 from pydantic_models.wishlist_game import WishlistGameFull
 
-def send_email(receiver_email: str, bargains: List[WishlistGameFull]):
-    table_rows = compile_table_rows(bargains)
+def send_email(receiver_email: str, bargains: List[WishlistGameFull], localeCode: str):
+    table_rows = compile_table_rows(bargains, localeCode)
     html = f"""
     <!doctype html>
     <html lang="en">
@@ -56,14 +57,15 @@ def send_email(receiver_email: str, bargains: List[WishlistGameFull]):
         server.sendmail(settings.SENDER_EMAIL, receiver_email, message.as_string())
 
 
-def compile_table_rows(bargains: List[WishlistGameFull]):
+def compile_table_rows(bargains: List[WishlistGameFull], localeCode: str = "de_CH"):
+    locale.setlocale(locale.LC_ALL, localeCode)
     for bargain in bargains:
         row = f"""
         <tr>
             <td>{bargain.name}</td>
             <td><a href="{bargain.link}" target="_blank" style="color: #0d6efd;">{bargain.shop} Link</a></td>
-            <td class="text-success fw-bold">{bargain.currency} {'{:.2f}'.format(bargain.price_new)}</td>              
-            <td class="text-decoration-line-through .fs-6 text fw-lighter text-secondary">{bargain.currency} {'{:.2f}'.format(bargain.price_old)}</td>
+            <td class="text-success fw-bold">{locale.currency(bargain.price_new)}</td>              
+            <td class="text-decoration-line-through .fs-6 text fw-lighter text-secondary">{locale.currency(bargain.price_old)}</td>
         </tr>
         """
         yield row

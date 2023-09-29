@@ -25,3 +25,6 @@ beautifulsoup4==4.12.2
 # for async tasks
 asyncio==3.4.3
 aiohttp==3.8.5
+
+# currency symbol conversion
+iso4217parse==0.5.1 

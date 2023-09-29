@@ -40,7 +40,7 @@ class PriceCheckService:
         if bargains:
             logging.warning(f"Alerting {len(bargains)} bargains to {self.wishlist.email}")
             to_update.extend(bargains)
-            send_email(self.wishlist.email, bargains)
+            send_email(self.wishlist.email, bargains, f"{self.wishlist.language_code}_{self.wishlist.country_code}")
         if to_update:
             logging.warning(f"Updating {len(to_update)} games in db")
             update_prices_in_db(to_update, db)
