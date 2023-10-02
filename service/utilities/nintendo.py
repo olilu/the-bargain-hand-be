@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from typing import List
 import requests
 import difflib
+import time
 
 from service.utilities.shop import ShopUtilities
 from pydantic_models.wishlist_game import WishlistGameFull
@@ -14,14 +15,19 @@ class NintendoUtilities(ShopUtilities):
         self.shop_region = self.get_nintendo_shop_region()
     
     def search(self, query: str) -> List[WishlistGameFull]:
+        start_time = time.time()
         games = []
         search_results = [result for result in self.shop_region.search_switch_games(query)]
+        time_difference = time.time() - start_time
+        print(f'search time: %.2f seconds.' % time_difference)
         closest_matches = filter_closest_matches(query, search_results)
         for game in closest_matches:
             game_info = self.shop_region.game_info(game.nsuid)
             game_price_info = prices.get_price(game, country=self.country_code.upper())
             wishlist_game = self.compile_nintendo_wishlist_game(game_info, game_price_info)
             games.append(wishlist_game)
+        time_difference = time.time() - start_time
+        print(f'Scraping time: %.2f seconds.' % time_difference)
         return games
     
     def price_check(self, game_list: List[WishlistGameFull]) -> (List[WishlistGameFull], List[WishlistGameFull]):
@@ -73,11 +79,11 @@ def scrape_nintendo_image_link(url: str) -> str:
     return soup.find("vc-price-box-overlay")[":demo-img-src"].replace("'","")
 
 def filter_closest_matches(query:str, game_list: list, limit=10) -> list:
-    titles= [game.title for game in game_list]
-    closest_matches_titles = difflib.get_close_matches(query, titles, n=limit, cutoff=0.1)
-    closest_matches = [game for game in game_list if game.title in closest_matches_titles]
+    titles = [(game.title).lower() for game in game_list]
+    closest_matches_titles = difflib.get_close_matches(query.lower(), titles, n=limit, cutoff=0.1)
+    closest_matches = [game for game in game_list if (game.title).lower() in closest_matches_titles]
     def get_index(element):
-        return closest_matches_titles.index(element.title)
+        return closest_matches_titles.index(element.title.lower())
     closest_matches = sorted(closest_matches, key=get_index)
     return closest_matches
 

@@ -15,6 +15,7 @@ class PlayStationUtilities(ShopUtilities):
         self.base_url = "https://store.playstation.com"
         self.country_language_code = f"{language_code.lower()}-{country_code.lower()}"
         self.search_url = f"{self.base_url}/{self.country_language_code}/search/"
+        self.currency = iso4217parse.by_country(self.country_code)[0].alpha3
     
     def search(self, query: str) -> List[WishlistGameFull]:
         search_results = self.scrape_playstation_search_results(query)
@@ -44,6 +45,7 @@ class PlayStationUtilities(ShopUtilities):
             links = links[:10]
             img_links = img_links[:10]
         links = [f"{self.base_url}{link}" for link in links]
+        print(links)
         loop = get_or_create_eventloop()
         games = loop.run_until_complete(self.scrape_playstation_games_async(links, img_links))
         return games
@@ -62,54 +64,66 @@ class PlayStationUtilities(ShopUtilities):
         async with session.get(url) as response:
             html = await response.text()
             soup = BeautifulSoup(html, 'html.parser', parse_only=SoupStrainer("main"))
-            currency, price_new, on_sale, price_old = self.retrieve_price_info(soup)
+            # check if the link is valid
+            if bool(soup.select('section[data-qa="error"]')):
+                return WishlistGameFull(
+                    wishlist_uuid=self.wishlist_uuid,
+                    game_id=url.split("/")[-1],
+                    name="invalid_link_not_scrapable",
+                    shop="PlayStation",
+                    link=url,
+                    img_link=img_url,
+                    price_new=0.0,
+                    price_old=0.0,
+                    on_sale=False,
+                    currency=self.currency
+                )
+            price_new, on_sale, price_old = self.retrieve_price_info(soup)
+            name = soup.select('h1[data-qa="mfe-game-title#name"]')[0].decode_contents()
             
             ps_game = WishlistGameFull(
                 wishlist_uuid=self.wishlist_uuid,
                 game_id=url.split("/")[-1],
-                name=soup.select('h1[data-qa="mfe-game-title#name"]')[0].decode_contents(),
+                name=name,
                 shop="PlayStation",
                 link=url,
                 img_link=img_url,
                 price_new=price_new,
                 price_old=price_old,
                 on_sale=on_sale,
-                currency=currency
+                currency=self.currency
             )
             return ps_game
     
     def retrieve_price_info(self, soup: BeautifulSoup) -> (str, float, bool, float):
-        i = 0
-        price_info = soup.select(f'span[data-qa="mfeCtaMain#offer{i}#finalPrice"]')[0].decode_contents()
-        # check if the price info contains a currency and a price
-        match = re.search(r'([\D]+)([\d.]+)', price_info.replace(" ",""))
+        i = -1
+        match = False
         # if not, check the next price info (sometimes there are free test versions available without price info)
         while not match or i == 5:
-            i += 1
             try:
+                i += 1
                 price_info = soup.select(f'span[data-qa="mfeCtaMain#offer{i}#finalPrice"]')[0].decode_contents()
+                # check if the price info contains a currency and a price
                 match = re.search(r'([\D]+)([\d.]+)', price_info.replace(" ",""))
             except IndexError:
-                # if there is no price info at all, the game is free or not available and we return a tuple with a "-" and a 0.0
+                # if there is no price info at all, the game is free or not available and we 0.0 as price
                 break
         if match:
             # if there is discount info displayed on the target offering, the game is on sale
-            currency = iso4217parse.by_country(self.country_code)[0].alpha3
             on_sale = bool(soup.select(f'span[data-qa="mfeCtaMain#offer{i}#discountInfo"]'))
             if on_sale:
                 # if the game is on sale, read out the original price
                 # as there are some further spans in the inner HTML, we need to split and get the last element
-                price_old = soup.select(f'span[data-qa="mfeCtaMain#offer{i}#originalPrice"]')[0].decode_contents()
-                price_old_match = re.search(r'([\D]+)([\d.]+)', price_info.replace(" ",""))
+                original_price_info = soup.select(f'span[data-qa="mfeCtaMain#offer{i}#originalPrice"]')[0].decode_contents()
+                original_price = original_price_info.split("</span>")[-1]
+                price_old_match = re.search(r'([\D]+)([\d.]+)', original_price.replace(" ",""))
                 price_old = price_old_match.group(2)
             else:
                 price_old = match.group(2)
-            return currency, match.group(2), on_sale, price_old
+            return match.group(2), on_sale, price_old
         else:
-            return "-", 0.0, False, 0.0
-    
-import asyncio
-
+            return 0.0, False, 0.0
+        
 def get_or_create_eventloop():
     try:
         return asyncio.get_event_loop()
