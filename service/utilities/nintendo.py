@@ -5,6 +5,7 @@ from typing import List
 import requests
 import difflib
 import time
+import iso4217parse
 
 from service.utilities.shop import ShopUtilities
 from pydantic_models.wishlist_game import WishlistGameFull
@@ -23,7 +24,15 @@ class NintendoUtilities(ShopUtilities):
         closest_matches = filter_closest_matches(query, search_results)
         for game in closest_matches:
             game_info = self.shop_region.game_info(game.nsuid)
-            game_price_info = prices.get_price(game, country=self.country_code.upper())
+            try:
+                game_price_info = prices.get_price(game_info, country=self.country_code.upper())
+            except:
+                game_price_info = {
+                    "on_sale": False,
+                    "sale_value": 0,
+                    "value": 0,
+                    "currency": iso4217parse.by_country(self.country_code)[0].alpha3
+                }
             wishlist_game = self.compile_nintendo_wishlist_game(game_info, game_price_info)
             games.append(wishlist_game)
         time_difference = time.time() - start_time
