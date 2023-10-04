@@ -28,6 +28,7 @@ def start_application():
     app.include_router(wishlist_games_controller)
     app.include_router(search_controller)
     app.include_router(price_check_controller)
+    origins.append(settings.FRONTEND_URL)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,

@@ -22,4 +22,6 @@ class Settings:
     SENDER_PASSWORD: str = os.getenv("SMTP_SENDER_PASSWORD")
     TEST_RECEIVER_EMAIL: str = os.getenv("TEST_RECEIVER_EMAIL")
 
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL")
+
 settings = Settings()

@@ -18,6 +18,7 @@ SMTP_SERVER=smtp.example.com
 SMTP_PORT=465
 SMTP_SENDER_EMAIL=test@example.com
 SMTP_SENDER_PASSWORD='password'
+FRONTEND_URL=http://myfrontend:3000
 ```
 It is advised to create a python virtual environment for the dependencies: https://docs.python.org/3/library/venv.html
 
