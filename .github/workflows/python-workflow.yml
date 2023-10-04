@@ -77,3 +77,4 @@ jobs:
             ${{ env.LATEST_TAG }}
           build-args: |
             ${{ steps.version_step.outputs.version }}
+          platforms: linux/amd64,linux/arm64
