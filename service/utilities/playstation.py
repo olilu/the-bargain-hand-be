@@ -95,7 +95,7 @@ class PlayStationUtilities(ShopUtilities):
             )
             return ps_game
     
-    def retrieve_price_info(self, soup: BeautifulSoup) -> (str, float, bool, float):
+    def retrieve_price_info(self, soup: BeautifulSoup) -> (float, bool, float):
         i = -1
         match = False
         # if not, check the next price info (sometimes there are free test versions available without price info)

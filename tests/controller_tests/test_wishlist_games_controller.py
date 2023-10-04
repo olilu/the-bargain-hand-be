@@ -15,7 +15,8 @@ def generate_test_game_dict(wishlist_uuid: str, game: Game):
         "name": game.name,
         "shop": game.shop,
         "img_link": game.img_link,
-        "link": game.link
+        "link": game.link,
+        "on_sale": True
     }
     return game_dict
 
@@ -57,6 +58,7 @@ def test_add_game_to_wishlist(client):
     assert response.json()["price_new"] == game_dict["price_new"]
     assert response.json()["price_old"] == game_dict["price_old"]
     assert response.json()["currency"] == game_dict["currency"]
+    assert response.json()["on_sale"] == game_dict["on_sale"]
     # link a game to a wishlist that already has the game
     response = client.post("/wishlist/"+uuid+"/add-game",json=game_dict)
     assert response.status_code == 409

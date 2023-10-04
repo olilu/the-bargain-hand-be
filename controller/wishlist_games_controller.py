@@ -43,6 +43,7 @@ def add_game_to_wishlist(wishlist_uuid: str, wishlist_game: WishlistGameFull, db
         game_id=wishlist_game.game_id,
         price_new=wishlist_game.price_new,
         price_old=wishlist_game.price_old,
+        on_sale=wishlist_game.on_sale
     )
     wishlist_link_entry = link_game_to_wishlist(wishlist_link_entry,db)
     return wishlist_link_entry
