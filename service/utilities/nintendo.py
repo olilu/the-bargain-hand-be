@@ -66,7 +66,10 @@ class NintendoUtilities(ShopUtilities):
             new_price = game_price_info.sale_value
         else:
             new_price = game_price_info.value
-        game_link = getattr(game_info.eshop, self.country_language_code)
+        if self.country_code.upper() == "GB":
+            game_link = getattr(game_info.eshop, "uk_en")
+        else:
+            game_link = getattr(game_info.eshop, self.country_language_code)
             
         wishlist_game = WishlistGameFull(
             wishlist_uuid=self.wishlist_uuid,
@@ -85,7 +88,10 @@ class NintendoUtilities(ShopUtilities):
 def scrape_nintendo_image_link(url: str) -> str:
     r = requests.get(url)
     soup = BeautifulSoup(r.text, 'html.parser')
-    return soup.find("vc-price-box-overlay")[":demo-img-src"].replace("'","")
+    try:
+        return soup.find("vc-price-box-overlay")[":demo-img-src"].replace("'","")
+    except TypeError:
+        return "https://placehold.co/400x400"
 
 def filter_closest_matches(query:str, game_list: list, limit=10) -> list:
     titles = [(game.title).lower() for game in game_list]

@@ -104,23 +104,24 @@ class PlayStationUtilities(ShopUtilities):
                 i += 1
                 price_info = soup.select(f'span[data-qa="mfeCtaMain#offer{i}#finalPrice"]')[0].decode_contents()
                 # check if the price info contains a currency and a price
-                match = re.search(r'([\D]+)([\d.]+)', price_info.replace(" ",""))
+                match = re.search(r'([\D]+)([\d(.|,)]+)', price_info.replace(" ",""))
             except IndexError:
                 # if there is no price info at all, the game is free or not available and we 0.0 as price
                 break
         if match:
             # if there is discount info displayed on the target offering, the game is on sale
+            game_price = match.group(2).replace(",",".")
             on_sale = bool(soup.select(f'span[data-qa="mfeCtaMain#offer{i}#discountInfo"]'))
             if on_sale:
                 # if the game is on sale, read out the original price
                 # as there are some further spans in the inner HTML, we need to split and get the last element
                 original_price_info = soup.select(f'span[data-qa="mfeCtaMain#offer{i}#originalPrice"]')[0].decode_contents()
                 original_price = original_price_info.split("</span>")[-1]
-                price_old_match = re.search(r'([\D]+)([\d.]+)', original_price.replace(" ",""))
-                price_old = price_old_match.group(2)
+                price_old_match = re.search(r'([\D]+)([\d(.|,)]+)', original_price.replace(" ",""))
+                price_old = price_old_match.group(2).replace(",",".")
             else:
-                price_old = match.group(2)
-            return match.group(2), on_sale, price_old
+                price_old = game_price
+            return game_price, on_sale, price_old
         else:
             return 0.0, False, 0.0
         

@@ -65,7 +65,8 @@ def run_price_checks_all_wishlists(db: Session):
     from data_adapter.wishlist_game import get_wishlist_games_by_wishlist_uuid
     wishlists = list_wishlists(db)
     for wishlist in wishlists:
-        logging.warning(f"Checking prices for {wishlist.name}")
+        logging.warning(f"Checking prices for {wishlist.name} ({wishlist.uuid})")
+        logging.warning(f"Country {wishlist.country_code}, language {wishlist.language_code}")
         wishlist_games = get_wishlist_games_by_wishlist_uuid(wishlist.uuid, db)
         price_check_service = PriceCheckService(
             wishlist=wishlist,
