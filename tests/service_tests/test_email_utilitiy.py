@@ -52,5 +52,5 @@ BARGAIN3 = WishlistGameFull(
 @pytest.mark.skip(reason="Manual test")
 def test_send_email():
     bargains = [BARGAIN1,BARGAIN2,BARGAIN3]
-    send_email(settings.TEST_RECEIVER_EMAIL,bargains)
+    send_email(settings.TEST_RECEIVER_EMAIL,bargains, "de_CH")
     assert True

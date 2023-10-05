@@ -98,7 +98,6 @@ class PlayStationUtilities(ShopUtilities):
     def retrieve_price_info(self, soup: BeautifulSoup) -> (float, bool, float):
         i = -1
         match = False
-        # if not, check the next price info (sometimes there are free test versions available without price info)
         while not match or i == 5:
             try:
                 i += 1
@@ -114,10 +113,10 @@ class PlayStationUtilities(ShopUtilities):
             on_sale = bool(soup.select(f'span[data-qa="mfeCtaMain#offer{i}#discountInfo"]'))
             if on_sale:
                 # if the game is on sale, read out the original price
-                # as there are some further spans in the inner HTML, we need to split and get the last element
                 original_price_info = soup.select(f'span[data-qa="mfeCtaMain#offer{i}#originalPrice"]')[0].decode_contents()
                 original_price = original_price_info.split("</span>")[-1]
                 price_old_match = re.search(r'([\D]+)([\d(.|,)]+)', original_price.replace(" ",""))
+                # certain countries use commas as decimal separators, so we need to replace them with dots
                 price_old = price_old_match.group(2).replace(",",".")
             else:
                 price_old = game_price
