@@ -29,5 +29,9 @@ class ShopUtilities:
                         else:
                             logging.warning(f"Price increased for {new_game.name}: {db_game.price_new} -> {new_game.price_new}")
                             changed_games.append(new_game)
+                    elif db_game.currency != new_game.currency:
+                        logging.warning(f"Currency changed for {new_game.name}: {db_game.currency} -> {new_game.currency}")
+                        new_game.uuid = db_game.uuid
+                        changed_games.append(new_game)
         return cheaper_games, changed_games
         
