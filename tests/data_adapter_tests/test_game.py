@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 import pytest
 
 from pydantic_models.game import Game
-from data_adapter.game import create_game, get_game_by_id, delete_game_by_id
+from data_adapter.game import create_game, get_game_by_id, delete_game_by_id, update_game
 
 GAME = Game(
     id="EP9000-CUSA00470_00-JOURNEYPS4061115",
@@ -40,4 +40,21 @@ def test_delete_game_by_id(db_session:Session):
     result = delete_game_by_id(result.id,db_session)
     search_result = get_game_by_id(search_result.id,db_session)
     assert search_result is None
+
+# Test update_game_by_id function
+@pytest.mark.data_adapter
+def test_update_game(db_session:Session):
+    create_game(GAME, db_session)
+    search_result = get_game_by_id(GAME.id,db_session)
+    assert search_result.id == GAME.id
+    assert search_result.img_link == GAME.img_link
+    assert search_result.link == GAME.link
+    updated_game = GAME
+    updated_game.link = GAME2.link
+    updated_game.img_link = GAME2.img_link
+    update_game(updated_game,db_session)
+    search_result = get_game_by_id(GAME.id,db_session)
+    assert search_result.id == GAME.id
+    assert search_result.img_link == GAME2.img_link
+    assert search_result.link == GAME2.link
     

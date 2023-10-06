@@ -5,9 +5,11 @@ from sqlalchemy.orm import Session
 
 from pydantic_models.wishlist_game import WishlistGameFull, WishlistGame
 from pydantic_models.wishlist import WishlistFull
+from pydantic_models.game import Game
 from service.utilities.nintendo import NintendoUtilities
 from service.utilities.playstation import PlayStationUtilities
 from data_adapter.wishlist_game import update_wishlist_game_by_uuid
+from data_adapter.game import update_game
 from service.utilities.email import send_email
 
 class PriceCheckService:
@@ -48,17 +50,28 @@ class PriceCheckService:
     
 def update_prices_in_db(games: List[WishlistGameFull], db: Session):
     for game in games:
-        wishlist_game = WishlistGame(
-            uuid=game.uuid,
-            game_id=game.game_id,
-            wishlist_uuid=game.wishlist_uuid,
-            price_old=game.price_old,
-            price_new=game.price_new,
-            on_sale=game.on_sale,
-            currency=game.currency,
-        )
-        update_wishlist_game_by_uuid(game.uuid, wishlist_game, db)
+        wishlist_game, game = split_wishlist_game_full(game)
+        update_wishlist_game_by_uuid(wishlist_game.uuid, wishlist_game, db)
+        update_game(game, db)
 
+def split_wishlist_game_full(wishlist_game_full: WishlistGameFull) -> (WishlistGame, Game):
+    wishlist_game = WishlistGame(
+        uuid=wishlist_game_full.uuid,
+        game_id=wishlist_game_full.game_id,
+        wishlist_uuid=wishlist_game_full.wishlist_uuid,
+        price_old=wishlist_game_full.price_old,
+        price_new=wishlist_game_full.price_new,
+        on_sale=wishlist_game_full.on_sale,
+        currency=wishlist_game_full.currency,
+    )
+    game = Game(
+        id=wishlist_game_full.game_id,
+        name=wishlist_game_full.name,
+        shop=wishlist_game_full.shop,
+        img_link=wishlist_game_full.img_link,
+        link=wishlist_game_full.link,
+    )
+    return wishlist_game, game
 
 def run_price_checks_all_wishlists(db: Session):
     from data_adapter.wishlist import list_wishlists

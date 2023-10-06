@@ -5,7 +5,7 @@ import http
 
 from pydantic_models.wishlist_game import WishlistGameFull, WishlistGame
 from service.price_check_service import PriceCheckService
-from data_adapter.wishlist_game import get_wishlist_games_by_wishlist_uuid, update_wishlist_game_by_uuid
+from data_adapter.wishlist_game import get_wishlist_games_by_wishlist_uuid
 from data_adapter.wishlist import get_wishlist_by_uuid
 from data_adapter.session import get_db
 

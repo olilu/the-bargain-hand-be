@@ -15,6 +15,14 @@ def create_game(game: Game_Pydantic, db: Session):
 def get_game_by_id(id: str, db: Session):
     return db.query(Game_db_model).filter(Game_db_model.id == id).first()
 
+def update_game(game: Game_Pydantic, db: Session):
+    game_entry = db.query(Game_db_model).filter(Game_db_model.id == game.id)
+    if game_entry.first() is None:
+        return False
+    game_entry.update(game.model_dump())
+    db.commit()
+    return game_entry
+
 
 def delete_game_by_id(id: str, db: Session):
     game_entry = db.query(Game_db_model).filter(Game_db_model.id == id).first()

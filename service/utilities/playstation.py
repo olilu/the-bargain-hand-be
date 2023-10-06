@@ -15,6 +15,7 @@ class PlayStationUtilities(ShopUtilities):
         self.base_url = "https://store.playstation.com"
         self.country_language_code = f"{language_code.lower()}-{country_code.lower()}"
         self.search_url = f"{self.base_url}/{self.country_language_code}/search/"
+        self.product_url = f"{self.base_url}/{self.country_language_code}/product/"
         self.currency = iso4217parse.by_country(self.country_code)[0].alpha3
     
     def search(self, query: str) -> List[WishlistGameFull]:
@@ -26,7 +27,7 @@ class PlayStationUtilities(ShopUtilities):
         links = []
         img_links = []
         for game in game_list:
-            links.append(game.link)
+            links.append(f"{self.product_url}{game.game_id}")
             img_links.append(game.img_link)
         loop = get_or_create_eventloop()
         updated_game_list = loop.run_until_complete(self.scrape_playstation_games_async(links, img_links))
@@ -45,7 +46,6 @@ class PlayStationUtilities(ShopUtilities):
             links = links[:10]
             img_links = img_links[:10]
         links = [f"{self.base_url}{link}" for link in links]
-        print(links)
         loop = get_or_create_eventloop()
         games = loop.run_until_complete(self.scrape_playstation_games_async(links, img_links))
         return games
