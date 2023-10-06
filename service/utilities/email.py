@@ -1,5 +1,4 @@
 import smtplib, ssl
-import locale
 from typing import List
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -7,8 +6,8 @@ from email.mime.multipart import MIMEMultipart
 from config.settings import settings
 from pydantic_models.wishlist_game import WishlistGameFull
 
-def send_email(receiver_email: str, bargains: List[WishlistGameFull], localeCode: str):
-    table_rows = compile_table_rows(bargains, localeCode)
+def send_email(receiver_email: str, bargains: List[WishlistGameFull]):
+    table_rows = compile_table_rows(bargains)
     html = f"""
     <!doctype html>
     <html lang="en">
@@ -23,7 +22,7 @@ def send_email(receiver_email: str, bargains: List[WishlistGameFull], localeCode
         <div class="col">
         </div>
         <div class="col-6">
-            <h3>The mighty Bargain Hand has caught some sales!</h2>
+            <h3>🫳 The mighty Bargain Hand has caught some sales! 🤜</h2>
             <hr>
             <p>Let's see what we have for you:</p>
             <table class="table table-striped">
@@ -57,15 +56,14 @@ def send_email(receiver_email: str, bargains: List[WishlistGameFull], localeCode
         server.sendmail(settings.SENDER_EMAIL, receiver_email, message.as_string())
 
 
-def compile_table_rows(bargains: List[WishlistGameFull], localeCode: str = "de_CH"):
-    locale.setlocale(locale.LC_ALL, localeCode)
+def compile_table_rows(bargains: List[WishlistGameFull]):
     for bargain in bargains:
         row = f"""
         <tr>
             <td>{bargain.name}</td>
             <td><a href="{bargain.link}" target="_blank" style="color: #0d6efd;">{bargain.shop} Link</a></td>
-            <td class="text-success fw-bold">{locale.currency(bargain.price_new)}</td>              
-            <td class="text-decoration-line-through .fs-6 text fw-lighter text-secondary">{locale.currency(bargain.price_old)}</td>
+            <td class="text-success fw-bold">{bargain.currency} {"{:.2f}".format(bargain.price_new)}</td>              
+            <td class="text-decoration-line-through .fs-6 text fw-lighter text-secondary">{bargain.currency} {"{:.2f}".format(bargain.price_old)}</td>
         </tr>
         """
         yield row
