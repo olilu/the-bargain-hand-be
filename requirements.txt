@@ -11,9 +11,9 @@ psycopg[binary, pool]
 python-dotenv==1.0.0
 
 # for testing
-pytest
-pytest-cov
-httpx
+pytest==7.4.2
+pytest-cov==4.1.0
+httpx==0.25.0
 
 # email validation
 pydantic[email]
