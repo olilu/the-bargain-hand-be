@@ -37,7 +37,7 @@ jobs:
     - name: Test with pytest
       run: |
         echo "$POSTGRES_PORT"
-        pytest -v
+        pytest tests/ -v
   deploy-docker-image:
     runs-on: ubuntu-latest
     needs: test
