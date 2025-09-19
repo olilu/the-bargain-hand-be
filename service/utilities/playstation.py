@@ -37,9 +37,26 @@ class PlayStationUtilities(ShopUtilities):
     def scrape_playstation_search_results(self, query: str) -> List[WishlistGameFull]:
         r = requests.get(self.search_url+query)
         soup = BeautifulSoup(r.text, 'html.parser', parse_only=SoupStrainer("section","search-results"))
-        links = [link["href"] for link in soup.find_all("a", "psw-content-link")]
-        img_links = [link["src"] for link in soup.find_all('img', 'psw-top-left psw-l-fit-cover')]
+        links = []
+        img_links = []
+        
+        # Go through each <li> element to match links with their corresponding images
+        for li_element in soup.find_all("li"):
+            # Find the link within this <li> element
+            link_element = li_element.find("a", class_="psw-link psw-standard-link psw-t-link psw-c-t-accent psw-c-t-interactive-1 psw-m-t-2")
+            if link_element and link_element.get("href"):
+                # Find the image within this <li> element that doesn't have psw-blur class
+                img_element = None
+                for img in li_element.find_all("img"):
+                    if "psw-blur" not in img.get("class", []):
+                        img_element = img
+                        break
+                if img_element and img_element.get("src"):
+                    links.append(link_element["href"])
+                    img_links.append(img_element["src"])
+        
         if len(links) != len(img_links):
+            print(f"Image count: {len(img_links)} vs link count {len(links)}")
             raise ValueError("Number of links and images does not match")
         # for better performance, we only want to scrape the first 10 results
         if len(links) > 10:
@@ -79,7 +96,7 @@ class PlayStationUtilities(ShopUtilities):
                     currency=self.currency
                 )
             price_new, on_sale, price_old = self.retrieve_price_info(soup)
-            name = soup.select('h1[data-qa="mfe-game-title#name"]')[0].decode_contents()
+            name = soup.select('h1[data-qa="mfe-game-title#name"]')[0].get_text()
             
             ps_game = WishlistGameFull(
                 wishlist_uuid=self.wishlist_uuid,
