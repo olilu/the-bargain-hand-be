@@ -30,8 +30,8 @@ def test_nintendo_search():
     assert search_results[0].currency == "CHF"
     assert re.match(PRICE_REGEX, str(search_results[0].price_new))
     assert re.match(PRICE_REGEX, str(search_results[0].price_old))
-    assert search_results[0].link == 'https://www.nintendo.ch/de/Games/Nintendo-Switch-download-software/ABZU-1467719.html'
-    assert search_results[0].img_link == 'https://fs-prod-cdn.nintendo-europe.com/media/images/10_share_images/games_15/nintendo_switch_download_software_1/H2x1_NSwitchDS_Abzu_image1600w.jpg'
+    assert search_results[0].link == 'https://www.nintendo.ch/de/en-gb/Games/Nintendo-Switch-download-software/ABZU-1467719.html'
+    assert search_results[0].img_link == 'https://www.nintendo.com/eu/media/images/10_share_images/games_15/nintendo_switch_download_software_1/H2x1_NSwitchDS_Abzu_image1600w.jpg'
 
 @pytest.mark.integration
 @pytest.mark.slow

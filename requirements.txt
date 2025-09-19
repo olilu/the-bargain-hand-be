@@ -19,7 +19,7 @@ httpx
 pydantic[email]
 
 # web scraping
-nintendeals==3.1.1
+nintendeals==3.1.3
 beautifulsoup4==4.12.2
 
 # for async tasks
