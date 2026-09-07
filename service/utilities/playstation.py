@@ -4,12 +4,20 @@ import requests
 import asyncio
 import aiohttp
 import re
+import json
 import iso4217parse
 
 from pydantic_models.wishlist_game import WishlistGameFull
 from service.utilities.shop import ShopUtilities
 
 class PlayStationUtilities(ShopUtilities):
+    # PlayStation's search page no longer server-renders results, it fetches them client-side
+    # via this persisted GraphQL query. The hash is tied to the current store frontend build
+    # and may need to be refreshed if PlayStation ships a new one (search would return nothing).
+    GRAPHQL_URL = "https://web.np.playstation.com/api/graphql/v1/op"
+    SEARCH_OPERATION_NAME = "getSearchResults"
+    SEARCH_PERSISTED_QUERY_HASH = "4df6284f982e57bec70f23c77e2c219dc792eb19af7fb3d3a81767aa3f1958aa"
+
     def __init__(self, wishlist_uuid: str, country_code: str, language_code: str):
         super().__init__(wishlist_uuid, country_code, language_code)
         self.base_url = "https://store.playstation.com"
@@ -35,37 +43,59 @@ class PlayStationUtilities(ShopUtilities):
         return cheaper_games, updated_games
 
     def scrape_playstation_search_results(self, query: str) -> List[WishlistGameFull]:
-        r = requests.get(self.search_url+query)
-        soup = BeautifulSoup(r.text, 'html.parser', parse_only=SoupStrainer("section","search-results"))
+        variables = {
+            "countryCode": self.country_code.upper(),
+            "languageCode": self.language_code.lower(),
+            "nextCursor": "",
+            "pageOffset": 0,
+            "pageSize": 10,
+            "searchTerm": query,
+        }
+        extensions = {
+            "persistedQuery": {
+                "version": 1,
+                "sha256Hash": self.SEARCH_PERSISTED_QUERY_HASH,
+            }
+        }
+        params = {
+            "operationName": self.SEARCH_OPERATION_NAME,
+            "variables": json.dumps(variables),
+            "extensions": json.dumps(extensions),
+        }
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json",
+            # bypasses PlayStation's Apollo CSRF check for cross-origin GET requests
+            "apollo-require-preflight": "true",
+        }
+        r = requests.get(self.GRAPHQL_URL, params=params, headers=headers)
+        r.raise_for_status()
+        results = r.json().get("data", {}).get("universalSearch", {}).get("results", []) or []
+
         links = []
         img_links = []
-        
-        # Go through each <li> element to match links with their corresponding images
-        for li_element in soup.find_all("li"):
-            # Find the link within this <li> element
-            link_element = li_element.find("a", class_="psw-link psw-standard-link psw-t-link psw-c-t-accent psw-c-t-interactive-1 psw-m-t-2")
-            if link_element and link_element.get("href"):
-                # Find the image within this <li> element that doesn't have psw-blur class
-                img_element = None
-                for img in li_element.find_all("img"):
-                    if "psw-blur" not in img.get("class", []):
-                        img_element = img
-                        break
-                if img_element and img_element.get("src"):
-                    links.append(link_element["href"])
-                    img_links.append(img_element["src"])
-        
-        if len(links) != len(img_links):
-            print(f"Image count: {len(img_links)} vs link count {len(links)}")
-            raise ValueError("Number of links and images does not match")
-        # for better performance, we only want to scrape the first 10 results
-        if len(links) > 10:
-            links = links[:10]
-            img_links = img_links[:10]
-        links = [f"{self.base_url}{link}" for link in links]
+        for result in results:
+            game_id = result.get("id")
+            img_link = self.pick_search_result_image(result.get("media", []))
+            # numeric-only ids are "concept" ids (e.g. unreleased games) with no /product/ page
+            if game_id and img_link and "-" in game_id:
+                links.append(f"{self.product_url}{game_id}")
+                img_links.append(img_link)
+
         loop = get_or_create_eventloop()
         games = loop.run_until_complete(self.scrape_playstation_games_async(links, img_links))
         return games
+
+    def pick_search_result_image(self, media: List[dict]) -> str:
+        for role in ("GAMEHUB_COVER_ART", "FOUR_BY_THREE_BANNER", "EDITION_KEY_ART"):
+            for item in media:
+                if item.get("role") == role and item.get("type") == "IMAGE":
+                    return item.get("url")
+        for item in media:
+            if item.get("type") == "IMAGE":
+                return item.get("url")
+        return None
+
     
     async def scrape_playstation_games_async(self, links: List[str], img_links: List[str]) -> List[WishlistGameFull]:
         async with aiohttp.ClientSession() as session:

@@ -43,4 +43,4 @@ def test_search_game_playstation(client):
     assert re.match(PRICE_REGEX, str(search_response.json()[0]["price_new"]))
     assert re.match(PRICE_REGEX, str(search_response.json()[0]["price_old"]))
     assert search_response.json()[0]["link"] == 'https://store.playstation.com/de-ch/product/EP1302-CUSA14370_00-GHOSTOFATALE0000'
-    assert search_response.json()[0]["img_link"] == 'https://image.api.playstation.com/cdn/EP1302/CUSA14370_00/pz34zcrT5PB1E36hAseLAIu65fF9W4Cd.png'
+    assert search_response.json()[0]["img_link"].startswith('https://image.api.playstation.com/')

@@ -48,7 +48,7 @@ def test_playstation_search():
     assert re.match(PRICE_REGEX, str(search_results[0].price_new))    
     assert re.match(PRICE_REGEX, str(search_results[0].price_old))
     assert search_results[0].link == 'https://store.playstation.com/de-ch/product/EP1302-CUSA14370_00-GHOSTOFATALE0000'
-    assert search_results[0].img_link == 'https://image.api.playstation.com/cdn/EP1302/CUSA14370_00/pz34zcrT5PB1E36hAseLAIu65fF9W4Cd.png'
+    assert search_results[0].img_link.startswith('https://image.api.playstation.com/')
 
 @pytest.mark.integration
 def test_unknown_shop_search():
