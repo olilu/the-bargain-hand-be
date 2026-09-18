@@ -1,11 +1,12 @@
 from nintendeals import noe, noa, noj
 from nintendeals.api import prices
 from bs4 import BeautifulSoup
-from typing import List
+from typing import Dict, List
 import requests
 import difflib
-import time
+import logging
 import iso4217parse
+from concurrent.futures import ThreadPoolExecutor
 
 from service.utilities.shop import ShopUtilities
 from pydantic_models.wishlist_game import WishlistGameFull
@@ -16,41 +17,65 @@ class NintendoUtilities(ShopUtilities):
         self.shop_region = self.get_nintendo_shop_region()
     
     def search(self, query: str) -> List[WishlistGameFull]:
-        start_time = time.time()
+        search_results = [
+            game for game in self.shop_region.search_switch_games(query)
+            if game.nsuid
+        ]
+        search_results = filter_closest_matches(query, search_results)
+        price_by_nsuid = self.get_prices([game.nsuid for game in search_results])
+        image_by_nsuid = self.get_image_links(search_results)
         games = []
-        search_results = [result for result in self.shop_region.search_switch_games(query)]
-        time_difference = time.time() - start_time
-        print(f'search time: %.2f seconds.' % time_difference)
-        closest_matches = filter_closest_matches(query, search_results)
-        for game in closest_matches:
-            game_info = self.shop_region.game_info(game.nsuid)
-            try:
-                game_price_info = prices.get_price(game_info, country=self.country_code.upper())
-            except:
-                game_price_info = {
-                    "on_sale": False,
-                    "sale_value": 0,
-                    "value": 0,
-                    "currency": iso4217parse.by_country(self.country_code)[0].alpha3
-                }
-            wishlist_game = self.compile_nintendo_wishlist_game(game_info, game_price_info)
-            games.append(wishlist_game)
-        time_difference = time.time() - start_time
-        print(f'Scraping time: %.2f seconds.' % time_difference)
+        for game in search_results:
+            games.append(self.compile_nintendo_wishlist_game(
+                game,
+                price_by_nsuid.get(game.nsuid),
+                image_by_nsuid.get(game.nsuid),
+            ))
         return games
     
-    def price_check(self, game_list: List[WishlistGameFull]) -> (List[WishlistGameFull], List[WishlistGameFull]):
+    def price_check(self, game_list: List[WishlistGameFull]) -> tuple[List[WishlistGameFull], List[WishlistGameFull]]:
+        price_by_nsuid = self.get_prices([game.game_id for game in game_list])
         updated_game_list = []
         for game in game_list:
-            game_info = self.get_game_info_by_id(game.game_id)
-            updated_game_list.append(game_info)
-        cheaper_games, updated_games = self.compare_prices(game_list, updated_game_list) 
+            game_price_info = price_by_nsuid.get(game.game_id)
+            if game_price_info is None:
+                logging.warning("Could not retrieve Nintendo price for %s", game.game_id)
+                continue
+            updated_game_list.append(self.compile_price_update(game, game_price_info))
+        cheaper_games, updated_games = self.compare_prices(game_list, updated_game_list)
         return cheaper_games,updated_games
     
     def get_game_info_by_id(self, nsuid: str) -> WishlistGameFull:
         game_info = self.shop_region.game_info(nsuid)
-        game_price_info = prices.get_price(game_info, country=self.country_code.upper())
-        return self.compile_nintendo_wishlist_game(game_info, game_price_info)   
+        game_price_info = prices.get_price(game_info, country=self.country_code.upper()) if game_info else None
+        return self.compile_nintendo_wishlist_game(game_info, game_price_info)
+
+    def get_prices(self, nsuids: List[str]) -> Dict[str, object]:
+        if not nsuids:
+            return {}
+        price_by_nsuid = {}
+        unique_nsuids = list(dict.fromkeys(nsuids))
+        for start in range(0, len(unique_nsuids), 50):
+            batch = unique_nsuids[start:start + 50]
+            try:
+                price_by_nsuid.update(prices.fetch_prices(
+                    country=self.country_code.upper(),
+                    nsuids=batch,
+                ))
+            except Exception as error:
+                logging.warning("Could not retrieve Nintendo prices for batch: %s", error)
+        return price_by_nsuid
+
+    def get_image_links(self, games: List[object]) -> Dict[str, str]:
+        def fetch_image(game):
+            try:
+                return game.nsuid, scrape_nintendo_image_link(self.get_game_link(game))
+            except Exception as error:
+                logging.warning("Could not retrieve Nintendo image for %s: %s", game.nsuid, error)
+                return game.nsuid, "https://placehold.co/400x400"
+
+        with ThreadPoolExecutor(max_workers=min(10, max(1, len(games)))) as executor:
+            return dict(executor.map(fetch_image, games))
     
     def get_nintendo_shop_region(self):
         if self.country_code.upper() in ["US", "CA", "MX"]:
@@ -61,15 +86,22 @@ class NintendoUtilities(ShopUtilities):
             shop_region = noe
         return shop_region
     
-    def compile_nintendo_wishlist_game(self, game_info, game_price_info) -> WishlistGameFull:
-        if game_price_info.on_sale:
+    def compile_nintendo_wishlist_game(self, game_info, game_price_info, image_link=None) -> WishlistGameFull:
+        if game_info is None:
+            raise ValueError("Nintendo game information is missing")
+        if game_price_info is None:
+            currency = iso4217parse.by_country(self.country_code)[0].alpha3
+            new_price = old_price = 0.0
+            on_sale = False
+        elif game_price_info.on_sale:
             new_price = game_price_info.sale_value
+            old_price = game_price_info.value
+            on_sale = True
         else:
             new_price = game_price_info.value
-        if self.country_code.upper() == "GB":
-            game_link = getattr(game_info.eshop, "uk_en")
-        else:
-            game_link = getattr(game_info.eshop, self.country_language_code)
+            old_price = game_price_info.value
+            on_sale = False
+        game_link = self.get_game_link(game_info)
             
         wishlist_game = WishlistGameFull(
             wishlist_uuid=self.wishlist_uuid,
@@ -77,16 +109,31 @@ class NintendoUtilities(ShopUtilities):
             name=game_info.title,
             shop="Nintendo",
             link=game_link,
-            img_link=scrape_nintendo_image_link(game_link),
+            img_link=image_link or scrape_nintendo_image_link(game_link),
             price_new=new_price,
-            price_old=game_price_info.value,
-            on_sale=game_price_info.on_sale,
-            currency=game_price_info.currency
+            price_old=old_price,
+            on_sale=on_sale,
+            currency=game_price_info.currency if game_price_info is not None else currency
         )
         return wishlist_game
 
+    def get_game_link(self, game_info) -> str:
+        if self.country_code.upper() == "GB":
+            return getattr(game_info.eshop, "uk_en")
+        return getattr(game_info.eshop, self.country_language_code)
+
+    def compile_price_update(self, game: WishlistGameFull, game_price_info) -> WishlistGameFull:
+        new_price = game_price_info.sale_value if game_price_info.on_sale else game_price_info.value
+        return game.model_copy(update={
+            "price_new": new_price,
+            "price_old": game_price_info.value,
+            "on_sale": game_price_info.on_sale,
+            "currency": game_price_info.currency,
+        })
+
 def scrape_nintendo_image_link(url: str) -> str:
-    r = requests.get(url)
+    r = requests.get(url, timeout=10)
+    r.raise_for_status()
     soup = BeautifulSoup(r.text, 'html.parser')
     try:
         return soup.find("vc-price-box-overlay")[":demo-img-src"].replace("'","")
