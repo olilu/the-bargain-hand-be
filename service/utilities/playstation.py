@@ -1,10 +1,10 @@
-from bs4 import BeautifulSoup,SoupStrainer
 from typing import List
 import requests
 import asyncio
 import aiohttp
 import re
 import json
+import logging
 import iso4217parse
 
 from pydantic_models.wishlist_game import WishlistGameFull
@@ -27,22 +27,20 @@ class PlayStationUtilities(ShopUtilities):
         self.currency = iso4217parse.by_country(self.country_code)[0].alpha3
     
     def search(self, query: str) -> List[WishlistGameFull]:
-        search_results = self.scrape_playstation_search_results(query)
-        return search_results
+        response = self.search_playstation_api(query)
+        return [self.compile_game(result) for result in response]
     
-    def price_check(self, game_list: List[WishlistGameFull]) -> (List[WishlistGameFull], List[WishlistGameFull]):
-        updated_game_list = []
-        links = []
-        img_links = []
-        for game in game_list:
-            links.append(f"{self.product_url}{game.game_id}")
-            img_links.append(game.img_link)
+    def price_check(self, game_list: List[WishlistGameFull]) -> tuple[List[WishlistGameFull], List[WishlistGameFull]]:
         loop = get_or_create_eventloop()
-        updated_game_list = loop.run_until_complete(self.scrape_playstation_games_async(links, img_links))
-        cheaper_games, updated_games = self.compare_prices(game_list, updated_game_list) 
+        updated_game_list = loop.run_until_complete(self.check_games_async(game_list))
+        valid_games = [game for game in updated_game_list if game is not None]
+        cheaper_games, updated_games = self.compare_prices(game_list, valid_games)
         return cheaper_games, updated_games
 
     def scrape_playstation_search_results(self, query: str) -> List[WishlistGameFull]:
+        return [self.compile_game(result) for result in self.search_playstation_api(query)]
+
+    def search_playstation_api(self, query: str) -> List[dict]:
         variables = {
             "countryCode": self.country_code.upper(),
             "languageCode": self.language_code.lower(),
@@ -68,23 +66,92 @@ class PlayStationUtilities(ShopUtilities):
             # bypasses PlayStation's Apollo CSRF check for cross-origin GET requests
             "apollo-require-preflight": "true",
         }
-        r = requests.get(self.GRAPHQL_URL, params=params, headers=headers)
+        r = requests.get(self.GRAPHQL_URL, params=params, headers=headers, timeout=30)
         r.raise_for_status()
-        results = r.json().get("data", {}).get("universalSearch", {}).get("results", []) or []
+        return r.json().get("data", {}).get("universalSearch", {}).get("results", []) or []
 
-        links = []
-        img_links = []
-        for result in results:
-            game_id = result.get("id")
-            img_link = self.pick_search_result_image(result.get("media", []))
-            # numeric-only ids are "concept" ids (e.g. unreleased games) with no /product/ page
-            if game_id and img_link and "-" in game_id:
-                links.append(f"{self.product_url}{game_id}")
-                img_links.append(img_link)
+    def compile_game(self, result: dict, original_game: WishlistGameFull = None) -> WishlistGameFull:
+        game_id = original_game.game_id if original_game else result.get("id")
+        product = self.get_available_product(result)
+        product_id = product.get("id") if product else None
+        price = (product or result).get("price") or {}
+        price_new = self.parse_price(price.get("discountedPrice"))
+        price_old = self.parse_price(price.get("basePrice"))
+        if price_old == 0.0:
+            price_old = price_new
+        on_sale = price_new < price_old
+        link_id = product_id or result.get("id") or game_id
+        link_type = "product" if product_id else "concept"
+        return WishlistGameFull(
+            uuid=original_game.uuid if original_game else None,
+            wishlist_uuid=self.wishlist_uuid,
+            game_id=game_id,
+            name=result.get("name") or (original_game.name if original_game else "Unknown"),
+            shop="PlayStation",
+            link=f"{self.base_url}/{self.country_language_code}/{link_type}/{link_id}",
+            img_link=self.pick_search_result_image(result.get("media", [])) or (original_game.img_link if original_game else ""),
+            price_new=price_new,
+            price_old=price_old,
+            on_sale=on_sale,
+            currency=self.currency,
+        )
 
-        loop = get_or_create_eventloop()
-        games = loop.run_until_complete(self.scrape_playstation_games_async(links, img_links))
-        return games
+    @staticmethod
+    def get_available_product(result: dict) -> dict:
+        if result.get("__typename") == "Product":
+            return result
+        products = result.get("products") or []
+        return products[0] if products else None
+
+    @staticmethod
+    def parse_price(value: str) -> float:
+        if not value:
+            return 0.0
+        match = re.search(r"\d+(?:[.,]\d{1,2})?", value.replace("'", ""))
+        return float(match.group(0).replace(",", ".")) if match else 0.0
+
+    async def check_games_async(self, games: List[WishlistGameFull]) -> List[WishlistGameFull]:
+        async with aiohttp.ClientSession() as session:
+            results = await asyncio.gather(
+                *(self.check_game_async(session, game) for game in games),
+                return_exceptions=True,
+            )
+        valid_results = []
+        for game, result in zip(games, results):
+            if isinstance(result, Exception):
+                logging.warning("Could not check PlayStation game %s: %s", game.game_id, result)
+                continue
+            valid_results.append(result)
+        return valid_results
+
+    async def check_game_async(self, session: aiohttp.ClientSession, game: WishlistGameFull) -> WishlistGameFull:
+        variables = {
+            "countryCode": self.country_code.upper(),
+            "languageCode": self.language_code.lower(),
+            "nextCursor": "",
+            "pageOffset": 0,
+            "pageSize": 10,
+            "searchTerm": game.name,
+        }
+        extensions = {"persistedQuery": {"version": 1, "sha256Hash": self.SEARCH_PERSISTED_QUERY_HASH}}
+        params = {
+            "operationName": self.SEARCH_OPERATION_NAME,
+            "variables": json.dumps(variables),
+            "extensions": json.dumps(extensions),
+        }
+        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json", "apollo-require-preflight": "true"}
+        async with session.get(self.GRAPHQL_URL, params=params, headers=headers, timeout=30) as response:
+            response.raise_for_status()
+            payload = await response.json()
+        results = payload.get("data", {}).get("universalSearch", {}).get("results", []) or []
+        result = next((item for item in results if item.get("id") == game.game_id), None)
+        if result is None and game.game_id.isdigit():
+            result = next((item for item in results if item.get("__typename") == "Concept" and item.get("name") == game.name), None)
+        if result is None:
+            result = next((item for item in results if item.get("__typename") == "Product" and item.get("name") == game.name), None)
+        if result is None:
+            raise ValueError(f"PlayStation game not found in API: {game.name}")
+        return self.compile_game(result, game)
 
     def pick_search_result_image(self, media: List[dict]) -> str:
         for role in ("GAMEHUB_COVER_ART", "FOUR_BY_THREE_BANNER", "EDITION_KEY_ART"):
@@ -97,80 +164,6 @@ class PlayStationUtilities(ShopUtilities):
         return None
 
     
-    async def scrape_playstation_games_async(self, links: List[str], img_links: List[str]) -> List[WishlistGameFull]:
-        async with aiohttp.ClientSession() as session:
-            tasks = []
-            for index, link in enumerate(links):
-                url = link
-                img_url = img_links[index]
-                tasks.append(asyncio.ensure_future(self.scrape_playstation_game_info_async(session, url, img_url)))
-            games = await asyncio.gather(*tasks)
-            return games
-        
-    async def scrape_playstation_game_info_async(self, session: aiohttp.ClientSession, url: str, img_url: str) -> WishlistGameFull:
-        async with session.get(url) as response:
-            html = await response.text()
-            soup = BeautifulSoup(html, 'html.parser', parse_only=SoupStrainer("main"))
-            # check if the link is valid
-            if bool(soup.select('section[data-qa="error"]')):
-                return WishlistGameFull(
-                    wishlist_uuid=self.wishlist_uuid,
-                    game_id=url.split("/")[-1],
-                    name="invalid_link_not_scrapable",
-                    shop="PlayStation",
-                    link=url,
-                    img_link=img_url,
-                    price_new=0.0,
-                    price_old=0.0,
-                    on_sale=False,
-                    currency=self.currency
-                )
-            price_new, on_sale, price_old = self.retrieve_price_info(soup)
-            name = soup.select('h1[data-qa="mfe-game-title#name"]')[0].get_text()
-            
-            ps_game = WishlistGameFull(
-                wishlist_uuid=self.wishlist_uuid,
-                game_id=url.split("/")[-1],
-                name=name,
-                shop="PlayStation",
-                link=url,
-                img_link=img_url,
-                price_new=price_new,
-                price_old=price_old,
-                on_sale=on_sale,
-                currency=self.currency
-            )
-            return ps_game
-    
-    def retrieve_price_info(self, soup: BeautifulSoup) -> (float, bool, float):
-        i = -1
-        match = False
-        while not match or i == 5:
-            try:
-                i += 1
-                price_info = soup.select(f'span[data-qa="mfeCtaMain#offer{i}#finalPrice"]')[0].decode_contents()
-                # check if the price info contains a currency and a price
-                match = re.search(r'([\D]+)([\d(.|,)]+)', price_info.replace(" ",""))
-            except IndexError:
-                # if there is no price info at all, the game is free or not available and we 0.0 as price
-                break
-        if match:
-            # if there is discount info displayed on the target offering, the game is on sale
-            game_price = match.group(2).replace(",",".")
-            on_sale = bool(soup.select(f'span[data-qa="mfeCtaMain#offer{i}#discountInfo"]'))
-            if on_sale:
-                # if the game is on sale, read out the original price
-                original_price_info = soup.select(f'span[data-qa="mfeCtaMain#offer{i}#originalPrice"]')[0].decode_contents()
-                original_price = original_price_info.split("</span>")[-1]
-                price_old_match = re.search(r'([\D]+)([\d(.|,)]+)', original_price.replace(" ",""))
-                # certain countries use commas as decimal separators, so we need to replace them with dots
-                price_old = price_old_match.group(2).replace(",",".")
-            else:
-                price_old = game_price
-            return game_price, on_sale, price_old
-        else:
-            return 0.0, False, 0.0
-        
 def get_or_create_eventloop():
     try:
         return asyncio.get_event_loop()
