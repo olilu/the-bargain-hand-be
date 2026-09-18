@@ -17,7 +17,18 @@ api_router = APIRouter(tags=["wishlist games management"], prefix="/wishlist")
 @api_router.get("/{wishlist_uuid}/games",status_code=http.HTTPStatus.OK,response_model=List[WishlistGameFull],
                 summary="Get all games in a wishlist")
 def return_full_wishlist_games(wishlist_uuid: str, db:Session=Depends(get_db)):
+    wishlist = get_wishlist_by_uuid(wishlist_uuid, db)
+    if wishlist is None:
+        raise HTTPException(status_code=http.HTTPStatus.NOT_FOUND, detail=f"wishlist with uuid {wishlist_uuid} does not exist")
     wishlist_games = get_wishlist_games_by_wishlist_uuid(wishlist_uuid,db)
+    for game in wishlist_games:
+        if game.shop == "PlayStation":
+            locale = f"{wishlist.language_code.lower()}-{wishlist.country_code.lower()}"
+            link_type = "concept" if game.game_id.isdigit() else "product"
+            link_id = game.game_id
+            if link_type == "product" and "/product/" in game.link:
+                link_id = game.link.rsplit("/product/", 1)[1].split("/", 1)[0]
+            game.link = f"https://store.playstation.com/{locale}/{link_type}/{link_id}"
     return wishlist_games
 
 @api_router.post("/{wishlist_uuid}/add-game",status_code=http.HTTPStatus.OK,response_model=WishlistGame,

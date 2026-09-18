@@ -22,6 +22,7 @@ class PlayStationUtilities(ShopUtilities):
         super().__init__(wishlist_uuid, country_code, language_code)
         self.base_url = "https://store.playstation.com"
         self.country_language_code = f"{language_code.lower()}-{country_code.lower()}"
+        self.accept_language = f"{language_code.lower()}-{country_code.upper()},{language_code.lower()};q=0.9"
         self.search_url = f"{self.base_url}/{self.country_language_code}/search/"
         self.product_url = f"{self.base_url}/{self.country_language_code}/product/"
         self.currency = iso4217parse.by_country(self.country_code)[0].alpha3
@@ -63,6 +64,7 @@ class PlayStationUtilities(ShopUtilities):
         headers = {
             "User-Agent": "Mozilla/5.0",
             "Accept": "application/json",
+            "Accept-Language": self.accept_language,
             # bypasses PlayStation's Apollo CSRF check for cross-origin GET requests
             "apollo-require-preflight": "true",
         }
@@ -75,6 +77,7 @@ class PlayStationUtilities(ShopUtilities):
         product = self.get_available_product(result)
         product_id = product.get("id") if product else None
         price = (product or result).get("price") or {}
+        self.validate_price_currency(price)
         price_new = self.parse_price(price.get("discountedPrice"))
         price_old = self.parse_price(price.get("basePrice"))
         if price_old == 0.0:
@@ -110,6 +113,23 @@ class PlayStationUtilities(ShopUtilities):
         match = re.search(r"\d+(?:[.,]\d{1,2})?", value.replace("'", ""))
         return float(match.group(0).replace(",", ".")) if match else 0.0
 
+    def validate_price_currency(self, price: dict) -> None:
+        values = [price.get("basePrice"), price.get("discountedPrice")]
+        currency_markers = {
+            "CHF": ("CHF",),
+            "EUR": ("EUR", "€"),
+            "GBP": ("GBP", "£"),
+            "USD": ("USD", "$"),
+            "JPY": ("JPY", "¥"),
+        }
+        expected_markers = currency_markers.get(self.currency, (self.currency,))
+        all_markers = tuple(marker for markers in currency_markers.values() for marker in markers)
+        for value in values:
+            if not value or value == "Free":
+                continue
+            if any(marker in value for marker in all_markers) and not any(marker in value for marker in expected_markers):
+                raise ValueError(f"PlayStation returned {value!r}, expected {self.currency}")
+
     async def check_games_async(self, games: List[WishlistGameFull]) -> List[WishlistGameFull]:
         async with aiohttp.ClientSession() as session:
             results = await asyncio.gather(
@@ -139,7 +159,12 @@ class PlayStationUtilities(ShopUtilities):
             "variables": json.dumps(variables),
             "extensions": json.dumps(extensions),
         }
-        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json", "apollo-require-preflight": "true"}
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json",
+            "Accept-Language": self.accept_language,
+            "apollo-require-preflight": "true",
+        }
         async with session.get(self.GRAPHQL_URL, params=params, headers=headers, timeout=30) as response:
             response.raise_for_status()
             payload = await response.json()

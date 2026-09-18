@@ -42,6 +42,24 @@ def test_return_full_wishlist_games(client):
     assert response.json()[1]["wishlist_uuid"] == uuid
     assert response.json()[1]["game_id"] == game2_dict["game_id"]
 
+
+@pytest.mark.api
+def test_return_full_wishlist_games_uses_wishlist_playstation_locale(client):
+    french_wishlist = {**WISHLIST_DICT, "country_code": "FR", "language_code": "fr"}
+    response = client.post("/wishlist/create/", json=french_wishlist)
+    assert response.status_code == 200
+    uuid = response.json()["uuid"]
+    game_dict = generate_test_game_dict(uuid, GAME)
+    response = client.post("/wishlist/" + uuid + "/add-game", json=game_dict)
+    assert response.status_code == 200
+
+    response = client.get("/wishlist/" + uuid + "/games")
+
+    assert response.status_code == 200
+    assert response.json()[0]["link"] == (
+        "https://store.playstation.com/fr-fr/product/EP9000-CUSA00470_00-JOURNEYPS4061115"
+    )
+
 # Test the /wishlist/{wishlist_uuid}/add-game endpoint
 @pytest.mark.api
 def test_add_game_to_wishlist(client):

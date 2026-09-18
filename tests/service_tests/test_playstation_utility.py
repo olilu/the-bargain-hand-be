@@ -74,3 +74,17 @@ def test_async_check_keeps_successful_games_when_one_fails():
     result = asyncio.run(utility.check_games_async(games))
 
     assert result == [games[1]]
+
+
+def test_rejects_price_in_wrong_currency():
+    utility = create_utility()
+
+    try:
+        utility.validate_price_currency({
+            "basePrice": "£59.99",
+            "discountedPrice": "£38.99",
+        })
+    except ValueError as error:
+        assert "expected CHF" in str(error)
+    else:
+        raise AssertionError("A non-Swiss price must not be accepted")
